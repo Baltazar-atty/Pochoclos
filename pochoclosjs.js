@@ -122,4 +122,94 @@ function lanzarPochoclos(e) {
 // Inicialización
 document.addEventListener('DOMContentLoaded', () => {
   actualizarContadorYProgreso();
+
+  // Estado global de la sesión
+let usuarioSesion = null;
+
+async function procesarLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  const res = await fetch('login.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    usuarioSesion = data;
+    cerrarModalLogin();
+    actualizarInterfazSegunRol();
+    
+    // Redirigir a la vista correspondiente
+    cambiarRol(data.rol);
+    alert(`¡Bienvenido/a ${data.nombre}!`);
+  } else {
+    alert(data.message);
+  }
+}
+
+function actualizarInterfazSegunRol() {
+  const btnLogin = document.getElementById('btn-login-modal');
+  const btnAdmin = document.getElementById('btn-admin');
+  const btnEmpleado = document.getElementById('btn-empleado');
+  const btnLogout = document.getElementById('btn-logout');
+
+  if (!usuarioSesion) {
+    // Modo Cliente (público)
+    btnLogin.classList.remove('hidden');
+    btnAdmin.classList.add('hidden');
+    btnEmpleado.classList.add('hidden');
+    btnLogout.classList.add('hidden');
+  } else {
+    btnLogin.classList.add('hidden');
+    btnLogout.classList.remove('hidden');
+
+    if (usuarioSesion.rol === 'admin') {
+      btnAdmin.classList.remove('hidden');
+      btnEmpleado.classList.remove('hidden');
+      cargarListaEmpleados(); // Cargar la lista en la pestaña admin
+    } else if (usuarioSesion.rol === 'empleado') {
+      btnAdmin.classList.add('hidden');
+      btnEmpleado.classList.remove('hidden');
+    }
+  }
+}
+
+// Funciones CRUD de Empleados (Admin)
+async function cargarListaEmpleados() {
+  const res = await fetch('empleados.php');
+  const data = await res.json();
+  
+  if (data.success) {
+    const lista = document.getElementById('tabla-empleados');
+    lista.innerHTML = '';
+
+    data.empleados.forEach(emp => {
+      lista.innerHTML += `
+        <li>
+          <span><strong>${emp.nombre} ${emp.apellido}</strong> (${emp.email}) - <em>${emp.carrito_nombre || 'Sin carrito'}</em></span>
+          <button class="btn btn-primary btn-small" onclick="eliminarEmpleado(${emp.id})">🗑️ Borrar</button>
+        </li>
+      `;
+    });
+  }
+}
+
+async function eliminarEmpleado(id) {
+  if (!confirm('¿Seguro que deseas eliminar esta cuenta de empleado?')) return;
+
+  const res = await fetch('empleados.php', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id })
+  });
+
+  const data = await res.json();
+  alert(data.message);
+  if (data.success) cargarListaEmpleados();
+}
 });
