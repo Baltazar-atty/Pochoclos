@@ -1,77 +1,281 @@
-<nav>
-  <!-- El cliente siempre navega sin pedir login -->
-  <button id="btn-cliente" class="nav-btn active" onclick="cambiarRol('cliente')">
-    <span class="icon">🍿</span> Inicio / Clientes
-  </button>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pochoclos App - Panel y Venta en Vivo</title>
+  <link rel="stylesheet" href="pochoclos.css">
+</head>
+<body>
 
-  <!-- Botón dinámico que abre el modal de login si no hay sesión -->
-  <button id="btn-login-modal" class="nav-btn" onclick="abrirModalLogin()">
-    <span class="icon">🔑</span> Acceso Personal
-  </button>
+  <!-- BARRA DE NAVEGACIÓN -->
+  <nav>
+    <button id="btn-cliente" class="nav-btn active" onclick="cambiarRol('cliente')">
+      <span>🍿</span> Inicio / Clientes
+    </button>
+    <button id="btn-login-modal" class="nav-btn" onclick="abrirModalLogin()">
+      <span>🔑</span> Acceso Personal
+    </button>
+    <button id="btn-admin" class="nav-btn hidden" onclick="cambiarRol('admin')">
+      <span>👑</span> Panel Admin
+    </button>
+    <button id="btn-empleado" class="nav-btn hidden" onclick="cambiarRol('empleado')">
+      <span>🛒</span> Registrar Ventas
+    </button>
+    <button id="btn-logout" class="nav-btn hidden" onclick="cerrarSesion()">
+      <span>🚪</span> Salir
+    </button>
+  </nav>
 
-  <!-- Se muestran dinámicamente según la sesión iniciada con JS -->
-  <button id="btn-admin" class="nav-btn hidden" onclick="cambiarRol('admin')">
-    <span class="icon">👑</span> Panel Admin
-  </button>
-  <button id="btn-empleado" class="nav-btn hidden" onclick="cambiarRol('empleado')">
-    <span class="icon">🛒</span> Registrar Ventas
-  </button>
-  <button id="btn-logout" class="nav-btn hidden" onclick="cerrarSesion()">
-    <span class="icon">🚪</span> Salir
-  </button>
-</nav>
-<div id="modal-login" class="modal-backdrop hidden">
-  <div class="card modal-card">
-    <h3>🔑 Ingreso de Personal</h3>
-    <p class="text-subtle">Solo para Administradores y Vendedores de Carrito</p>
-    
-    <form id="form-login" onsubmit="procesarLogin(event)">
-      <div class="form-group">
-        <label for="login-email">Correo Electrónico:</label>
-        <input type="email" id="login-email" class="form-control" required placeholder="ejemplo@pochoclos.com">
+  <div class="container">
+
+    <!-- VISTA CLIENTE (PÚBLICA) -->
+    <section id="vista-cliente">
+      <div class="card">
+        <h2>🍿 Carritos de Pochoclos Cerca Tuyo</h2>
+        <p>Consulta en tiempo real la disponibilidad y stock de cada puesto.</p>
+        <div id="lista-carritos-cliente" style="margin-top: 15px;">
+          <!-- Se carga dinámicamente -->
+          <p>Cargando carritos...</p>
+        </div>
       </div>
 
-      <div class="form-group">
-        <label for="login-password">Contraseña:</label>
-        <input type="password" id="login-password" class="form-control" required>
+      <div class="card">
+        <h2>💬 Reseñas y Opiniones</h2>
+        <div id="lista-resenas">
+          <!-- Se carga dinámicamente -->
+        </div>
       </div>
+    </section>
 
-      <div class="btn-group">
-        <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
-        <button type="button" class="btn btn-secondary" onclick="cerrarModalLogin()">Cancelar</button>
+    <!-- VISTA EMPLEADO (PROTEGIDA) -->
+    <section id="vista-empleado" class="hidden">
+      <div class="card">
+        <h2>🛒 Registrar Nueva Venta</h2>
+        <form id="form-venta" onsubmit="registrarVenta(event)">
+          <div class="form-group">
+            <label for="venta-producto">Producto:</label>
+            <select id="venta-producto" class="form-control" required>
+              <option value="1">Bolsa ($1500)</option>
+              <option value="2">Caja ($2500)</option>
+              <option value="3">Maletín Spiderman ($4000)</option>
+              <option value="4">Maletín Cars ($4000)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="venta-cantidad">Cantidad:</label>
+            <input type="number" id="venta-cantidad" class="form-control" min="1" value="1" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Confirmar Venta</button>
+        </form>
       </div>
-    </form>
+    </section>
+
+    <!-- VISTA ADMINISTRADOR (PROTEGIDA) -->
+    <section id="vista-admin" class="hidden">
+      <div class="card">
+        <h2>👑 Panel de Control General</h2>
+        <h3>Gestión de Cuentas de Empleados</h3>
+        
+        <form id="form-crear-empleado" onsubmit="crearEmpleado(event)" style="margin-bottom: 20px;">
+          <h4>➕ Crear Nuevo Empleado</h4>
+          <div class="form-group">
+            <input type="text" id="emp-nombre" class="form-control" placeholder="Nombre" required>
+          </div>
+          <div class="form-group">
+            <input type="text" id="emp-apellido" class="form-control" placeholder="Apellido" required>
+          </div>
+          <div class="form-group">
+            <input type="email" id="emp-email" class="form-control" placeholder="Email" required>
+          </div>
+          <div class="form-group">
+            <input type="password" id="emp-password" class="form-control" placeholder="Contraseña" required>
+          </div>
+          <div class="form-group">
+            <label for="emp-carrito">Asignar a Carrito:</label>
+            <select id="emp-carrito" class="form-control">
+              <option value="1">Carrito #1: Plaza Central</option>
+              <option value="2">Carrito #2: Peatonal / Playa</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Registrar Empleado</button>
+        </form>
+
+        <h4>👥 Empleados Activos</h4>
+        <ul id="tabla-empleados" class="zona-caliente-list">
+          <!-- Se llena mediante JS -->
+        </ul>
+      </div>
+    </section>
+
   </div>
-</div>
-<!-- Gestión de Empleados (Solo visible para Admin) -->
-<h3>3. Gestión de Cuentas de Empleados</h3>
-<div class="card form-card">
-  <h4>➕ Crear Nuevo Empleado</h4>
-  <form id="form-crear-empleado" onsubmit="crearEmpleado(event)">
-    <div class="form-group">
-      <input type="text" id="emp-nombre" class="form-control" placeholder="Nombre" required>
-    </div>
-    <div class="form-group">
-      <input type="text" id="emp-apellido" class="form-control" placeholder="Apellido" required>
-    </div>
-    <div class="form-group">
-      <input type="email" id="emp-email" class="form-control" placeholder="Email" required>
-    </div>
-    <div class="form-group">
-      <input type="password" id="emp-password" class="form-control" placeholder="Contraseña asignada" required>
-    </div>
-    <div class="form-group">
-      <label for="emp-carrito">Asignar a Carrito:</label>
-      <select id="emp-carrito" class="form-control">
-        <option value="1">Carrito #1: Plaza Central</option>
-        <option value="2">Carrito #2: Peatonal / Playa</option>
-      </select>
-    </div>
-    <button type="submit" class="btn btn-primary">Registrar Empleado</button>
-  </form>
 
-  <h4 style="margin-top:20px;">👥 Empleados Activos</h4>
-  <ul id="tabla-empleados" class="zona-caliente-list">
-    <!-- Se llena dinámicamente mediante JS -->
-  </ul>
-</div>
+  <!-- MODAL DE LOGIN (EMERGENTE) -->
+  <div id="modal-login" class="modal-backdrop hidden">
+    <div class="card modal-card">
+      <h3>🔑 Ingreso de Personal</h3>
+      <p class="text-subtle">Acceso restringido a administradores y vendedores</p>
+      
+      <form id="form-login" onsubmit="procesarLogin(event)">
+        <div class="form-group">
+          <label for="login-email">Correo Electrónico:</label>
+          <input type="email" id="login-email" class="form-control" required placeholder="ejemplo@pochoclos.com">
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Contraseña:</label>
+          <input type="password" id="login-password" class="form-control" required>
+        </div>
+
+        <div class="btn-group">
+          <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+          <button type="button" class="btn btn-secondary" onclick="cerrarModalLogin()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LÓGICA JAVASCRIPT -->
+  <script>
+    let usuarioSesion = null;
+
+    function cambiarRol(rol) {
+      document.getElementById('vista-cliente').classList.add('hidden');
+      document.getElementById('vista-empleado').classList.add('hidden');
+      document.getElementById('vista-admin').classList.add('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      if (rol === 'cliente') {
+        document.getElementById('vista-cliente').classList.remove('hidden');
+        document.getElementById('btn-cliente').classList.add('active');
+      } else if (rol === 'empleado') {
+        document.getElementById('vista-empleado').classList.remove('hidden');
+        document.getElementById('btn-empleado').classList.add('active');
+      } else if (rol === 'admin') {
+        document.getElementById('vista-admin').classList.remove('hidden');
+        document.getElementById('btn-admin').classList.add('active');
+      }
+    }
+
+    function abrirModalLogin() {
+      document.getElementById('modal-login').classList.remove('hidden');
+    }
+
+    function cerrarModalLogin() {
+      document.getElementById('modal-login').classList.add('hidden');
+    }
+
+    async function procesarLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const res = await fetch('login.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          usuarioSesion = data;
+          cerrarModalLogin();
+          actualizarNavegacion();
+          cambiarRol(data.rol);
+        } else {
+          alert(data.message || 'Error al ingresar');
+        }
+      } catch (err) {
+        alert('Error conectando con el servidor');
+      }
+    }
+
+    function actualizarNavegacion() {
+      const btnLogin = document.getElementById('btn-login-modal');
+      const btnAdmin = document.getElementById('btn-admin');
+      const btnEmpleado = document.getElementById('btn-empleado');
+      const btnLogout = document.getElementById('btn-logout');
+
+      if (!usuarioSesion) {
+        btnLogin.classList.remove('hidden');
+        btnAdmin.classList.add('hidden');
+        btnEmpleado.classList.add('hidden');
+        btnLogout.classList.add('hidden');
+      } else {
+        btnLogin.classList.add('hidden');
+        btnLogout.classList.remove('hidden');
+
+        if (usuarioSesion.rol === 'admin') {
+          btnAdmin.classList.remove('hidden');
+          btnEmpleado.classList.remove('hidden');
+          cargarListaEmpleados();
+        } else if (usuarioSesion.rol === 'empleado') {
+          btnAdmin.classList.add('hidden');
+          btnEmpleado.classList.remove('hidden');
+        }
+      }
+    }
+
+    function cerrarSesion() {
+      usuarioSesion = null;
+      actualizarNavegacion();
+      cambiarRol('cliente');
+    }
+
+    // Funciones CRUD para el Admin
+    async function cargarListaEmpleados() {
+      try {
+        const res = await fetch('empleados.php');
+        const data = await res.json();
+        if (data.success) {
+          const lista = document.getElementById('tabla-empleados');
+          lista.innerHTML = '';
+          data.empleados.forEach(emp => {
+            lista.innerHTML += `
+              <li>
+                <span><strong>${emp.nombre} ${emp.apellido}</strong> (${emp.email}) - <em>${emp.carrito_nombre || 'Sin carrito'}</em></span>
+                <button class="btn btn-danger btn-small" onclick="eliminarEmpleado(${emp.id})">🗑️ Borrar</button>
+              </li>
+            `;
+          });
+        }
+      } catch(e) {}
+    }
+
+    async function crearEmpleado(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('emp-nombre').value;
+      const apellido = document.getElementById('emp-apellido').value;
+      const email = document.getElementById('emp-email').value;
+      const password = document.getElementById('emp-password').value;
+      const carrito_id = document.getElementById('emp-carrito').value;
+
+      const res = await fetch('empleados.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, apellido, email, password, carrito_id })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) {
+        document.getElementById('form-crear-empleado').reset();
+        cargarListaEmpleados();
+      }
+    }
+
+    async function eliminarEmpleado(id) {
+      if (!confirm('¿Seguro que querés eliminar a este empleado?')) return;
+      const res = await fetch('empleados.php', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      alert(data.message);
+      if (data.success) cargarListaEmpleados();
+    }
+  </script>
+</body>
+</html>
