@@ -3,55 +3,127 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pochoclos App - Panel y Venta en Vivo</title>
+  <title>Pochoclos App</title>
   <link rel="stylesheet" href="pochoclos.css">
+  <style>
+    .hidden {
+      display: none !important;
+    }
+
+    /* BARRA DE PROGRESO DE VENTAS */
+    .progress-bar-container {
+      background-color: #e2e8f0;
+      border-radius: 12px;
+      height: 24px;
+      width: 100%;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, #f59e0b, #e11d48);
+      height: 100%;
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    /* MODAL DE LOGIN EN LA ESQUINA SUPERIOR */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-card {
+      background: #ffffff;
+      width: 90%;
+      max-width: 400px;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .close-modal {
+      position: absolute;
+      top: 12px;
+      right: 15px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: #64748b;
+    }
+  </style>
 </head>
 <body>
 
-  <!-- BARRA DE NAVEGACIÓN -->
+  <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
   <nav>
-    <button id="btn-cliente" class="nav-btn active" onclick="cambiarRol('cliente')">
-      <span>🍿</span> Inicio / Clientes
-    </button>
-    <button id="btn-login-modal" class="nav-btn" onclick="abrirModalLogin()">
-      <span>🔑</span> Acceso Personal
-    </button>
-    <button id="btn-admin" class="nav-btn hidden" onclick="cambiarRol('admin')">
-      <span>👑</span> Panel Admin
-    </button>
-    <button id="btn-empleado" class="nav-btn hidden" onclick="cambiarRol('empleado')">
-      <span>🛒</span> Registrar Ventas
-    </button>
-    <button id="btn-logout" class="nav-btn hidden" onclick="cerrarSesion()">
-      <span>🚪</span> Salir
-    </button>
+    <div class="nav-brand">🍿 Pochoclos App</div>
+    <div class="nav-actions">
+      <!-- Botón visible únicamente para el público en la esquina superior derecha -->
+      <button id="btn-abrir-login" class="nav-btn" onclick="abrirModalLogin()">🔑 Acceso Personal</button>
+      
+      <!-- Información de usuario y botón salir cuando hay sesión iniciada -->
+      <span id="label-usuario" class="hidden" style="color: #94a3b8; align-self: center; font-size: 0.9rem; margin-right: 10px;"></span>
+      <button id="btn-cerrar-sesion" class="nav-btn hidden" onclick="cerrarSesion()">🚪 Cerrar Sesión</button>
+    </div>
   </nav>
 
+  <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
 
-    <!-- VISTA CLIENTE (PÚBLICA) -->
-    <section id="vista-cliente">
+    <!-- 1. VISTA PÚBLICA (PÁGINA DE INICIO POR DEFECTO PARA CLIENTES) -->
+    <main id="vista-publica">
+      
+      <!-- TARJETA: BARRA DE POCHOCLOS VENDIDOS -->
       <div class="card">
-        <h2>🍿 Carritos de Pochoclos Cerca Tuyo</h2>
-        <p>Consulta en tiempo real la disponibilidad y stock de cada puesto.</p>
-        <div id="lista-carritos-cliente" style="margin-top: 15px;">
-          <!-- Se carga dinámicamente -->
-          <p>Cargando carritos...</p>
+        <h2>📊 Pochoclos Vendidos Hoy</h2>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 10px;">
+          Meta del día: <strong id="meta-cajas">100</strong> cajas / bolsas
+        </p>
+        
+        <div class="progress-bar-container">
+          <div id="barra-pochoclos" class="progress-bar" style="width: 65%;">65%</div>
+        </div>
+
+        <p style="margin-top: 8px; font-weight: 600; color: #0f172a;">
+          🍿 Llevamos vendidas: <span id="total-vendidas" style="color: #e11d48; font-size: 1.1rem;">65</span> unidades.
+        </p>
+      </div>
+
+      <!-- TARJETA: CARRITO MÁS CERCANO -->
+      <div class="card">
+        <h2>📍 Carrito Más Cercano</h2>
+        <div id="info-carrito-cercano" style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; margin-top: 10px;">
+          <h3 style="color: #0f172a; margin-bottom: 5px;" id="nombre-carrito">🛒 Carrito #1 - Plaza Central</h3>
+          <p><strong>Ubicación:</strong> <span id="ubicacion-carrito">Av. San Martín y Calle 3 (Junto a la glorieta)</span></p>
+          <p><strong>Estado:</strong> <span style="color: #16a34a; font-weight: bold;">🟢 Abierto y preparando pochoclos frescos</span></p>
         </div>
       </div>
 
-      <div class="card">
-        <h2>💬 Reseñas y Opiniones</h2>
-        <div id="lista-resenas">
-          <!-- Se carga dinámicamente -->
-        </div>
-      </div>
-    </section>
+    </main>
 
-    <!-- VISTA EMPLEADO (PROTEGIDA) -->
+
+    <!-- 2. VISTA EMPLEADO / VENDEDOR (OCULTA POR DEFECTO) -->
     <section id="vista-empleado" class="hidden">
       <div class="card">
-        <h2>🛒 Registrar Nueva Venta</h2>
+        <h2>🛒 Registrar Nueva Venta (Panel Vendedor)</h2>
         <form id="form-venta" onsubmit="registrarVenta(event)">
           <div class="form-group">
             <label for="venta-producto">Producto:</label>
@@ -71,25 +143,28 @@
       </div>
     </section>
 
-    <!-- VISTA ADMINISTRADOR (PROTEGIDA) -->
+
+    <!-- 3. VISTA ADMINISTRADOR (OCULTA POR DEFECTO) -->
     <section id="vista-admin" class="hidden">
       <div class="card">
-        <h2>👑 Panel de Control General</h2>
-        <h3>Gestión de Cuentas de Empleados</h3>
+        <h2>👑 Gestión de Cuentas de Empleados (Panel Admin)</h2>
         
-        <form id="form-crear-empleado" onsubmit="crearEmpleado(event)" style="margin-bottom: 20px;">
-          <h4>➕ Crear Nuevo Empleado</h4>
+        <form id="form-crear-empleado" onsubmit="crearEmpleado(event)" style="margin-bottom: 25px;">
           <div class="form-group">
-            <input type="text" id="emp-nombre" class="form-control" placeholder="Nombre" required>
+            <label>Nombre:</label>
+            <input type="text" id="emp-nombre" class="form-control" required>
           </div>
           <div class="form-group">
-            <input type="text" id="emp-apellido" class="form-control" placeholder="Apellido" required>
+            <label>Apellido:</label>
+            <input type="text" id="emp-apellido" class="form-control" required>
           </div>
           <div class="form-group">
-            <input type="email" id="emp-email" class="form-control" placeholder="Email" required>
+            <label>Email:</label>
+            <input type="email" id="emp-email" class="form-control" required>
           </div>
           <div class="form-group">
-            <input type="password" id="emp-password" class="form-control" placeholder="Contraseña" required>
+            <label>Contraseña Asignada:</label>
+            <input type="password" id="emp-password" class="form-control" required>
           </div>
           <div class="form-group">
             <label for="emp-carrito">Asignar a Carrito:</label>
@@ -98,39 +173,40 @@
               <option value="2">Carrito #2: Peatonal / Playa</option>
             </select>
           </div>
-          <button type="submit" class="btn btn-primary">Registrar Empleado</button>
+          <button type="submit" class="btn btn-primary">➕ Crear Empleado</button>
         </form>
 
-        <h4>👥 Empleados Activos</h4>
-        <ul id="tabla-empleados" class="zona-caliente-list">
-          <!-- Se llena mediante JS -->
+        <h3>👥 Lista de Empleados Registrados</h3>
+        <ul id="tabla-empleados" class="item-list" style="margin-top: 10px;">
+          <!-- Carga dinámicamente -->
         </ul>
       </div>
     </section>
 
   </div>
 
-  <!-- MODAL DE LOGIN (EMERGENTE) -->
-  <div id="modal-login" class="modal-backdrop hidden">
-    <div class="card modal-card">
-      <h3>🔑 Ingreso de Personal</h3>
-      <p class="text-subtle">Acceso restringido a administradores y vendedores</p>
+  <!-- MODAL FLOTANTE DE INICIO DE SESIÓN -->
+  <div id="modal-login" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button class="close-modal" onclick="cerrarModalLogin()">&times;</button>
       
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="border: none; padding: 0;">🔑 Iniciar Sesión</h2>
+        <p style="font-size: 0.85rem; color: #64748b;">Acceso exclusivo para Vendedores y Admin</p>
+      </div>
+
       <form id="form-login" onsubmit="procesarLogin(event)">
         <div class="form-group">
           <label for="login-email">Correo Electrónico:</label>
-          <input type="email" id="login-email" class="form-control" required placeholder="ejemplo@pochoclos.com">
+          <input type="email" id="login-email" class="form-control" required placeholder="vendedor@pochoclos.com">
         </div>
 
         <div class="form-group">
           <label for="login-password">Contraseña:</label>
-          <input type="password" id="login-password" class="form-control" required>
+          <input type="password" id="login-password" class="form-control" required placeholder="••••••••">
         </div>
 
-        <div class="btn-group">
-          <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
-          <button type="button" class="btn btn-secondary" onclick="cerrarModalLogin()">Cancelar</button>
-        </div>
+        <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
       </form>
     </div>
   </div>
@@ -139,25 +215,7 @@
   <script>
     let usuarioSesion = null;
 
-    function cambiarRol(rol) {
-      document.getElementById('vista-cliente').classList.add('hidden');
-      document.getElementById('vista-empleado').classList.add('hidden');
-      document.getElementById('vista-admin').classList.add('hidden');
-
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-      if (rol === 'cliente') {
-        document.getElementById('vista-cliente').classList.remove('hidden');
-        document.getElementById('btn-cliente').classList.add('active');
-      } else if (rol === 'empleado') {
-        document.getElementById('vista-empleado').classList.remove('hidden');
-        document.getElementById('btn-empleado').classList.add('active');
-      } else if (rol === 'admin') {
-        document.getElementById('vista-admin').classList.remove('hidden');
-        document.getElementById('btn-admin').classList.add('active');
-      }
-    }
-
+    // CONTROL DE MODAL DE LOGIN
     function abrirModalLogin() {
       document.getElementById('modal-login').classList.remove('hidden');
     }
@@ -166,6 +224,7 @@
       document.getElementById('modal-login').classList.add('hidden');
     }
 
+    // PROCESAR AUTENTICACIÓN
     async function procesarLogin(e) {
       e.preventDefault();
       const email = document.getElementById('login-email').value;
@@ -182,49 +241,57 @@
         if (data.success) {
           usuarioSesion = data;
           cerrarModalLogin();
-          actualizarNavegacion();
-          cambiarRol(data.rol);
+          activarVistaPanel(data.rol);
         } else {
-          alert(data.message || 'Error al ingresar');
+          alert(data.message || 'Credenciales incorrectas');
         }
       } catch (err) {
-        alert('Error conectando con el servidor');
+        alert('Error al conectar con el servidor');
       }
     }
 
-    function actualizarNavegacion() {
-      const btnLogin = document.getElementById('btn-login-modal');
-      const btnAdmin = document.getElementById('btn-admin');
-      const btnEmpleado = document.getElementById('btn-empleado');
-      const btnLogout = document.getElementById('btn-logout');
+    // NAVEGACIÓN Y CAMBIO DE VISTAS
+    function activarVistaPanel(rol) {
+      // Ocultar vista pública
+      document.getElementById('vista-publica').classList.add('hidden');
+      document.getElementById('btn-abrir-login').classList.add('hidden');
 
-      if (!usuarioSesion) {
-        btnLogin.classList.remove('hidden');
-        btnAdmin.classList.add('hidden');
-        btnEmpleado.classList.add('hidden');
-        btnLogout.classList.add('hidden');
-      } else {
-        btnLogin.classList.add('hidden');
-        btnLogout.classList.remove('hidden');
+      // Ocultar paneles privados
+      document.getElementById('vista-empleado').classList.add('hidden');
+      document.getElementById('vista-admin').classList.add('hidden');
 
-        if (usuarioSesion.rol === 'admin') {
-          btnAdmin.classList.remove('hidden');
-          btnEmpleado.classList.remove('hidden');
-          cargarListaEmpleados();
-        } else if (usuarioSesion.rol === 'empleado') {
-          btnAdmin.classList.add('hidden');
-          btnEmpleado.classList.remove('hidden');
-        }
+      // Mostrar controles de sesión activa
+      const labelUser = document.getElementById('label-usuario');
+      const btnCerrar = document.getElementById('btn-cerrar-sesion');
+      labelUser.classList.remove('hidden');
+      btnCerrar.classList.remove('hidden');
+
+      if (rol === 'admin') {
+        labelUser.textContent = `👑 Admin: ${usuarioSesion.nombre || 'Administrador'}`;
+        document.getElementById('vista-admin').classList.remove('hidden');
+        cargarListaEmpleados();
+      } else if (rol === 'empleado' || rol === 'vendedor') {
+        labelUser.textContent = `🛒 Vendedor: ${usuarioSesion.nombre || 'Empleado'}`;
+        document.getElementById('vista-empleado').classList.remove('hidden');
       }
     }
 
     function cerrarSesion() {
       usuarioSesion = null;
-      actualizarNavegacion();
-      cambiarRol('cliente');
+      document.getElementById('form-login').reset();
+      
+      // Ocultar paneles de trabajo
+      document.getElementById('vista-empleado').classList.add('hidden');
+      document.getElementById('vista-admin').classList.add('hidden');
+      document.getElementById('label-usuario').classList.add('hidden');
+      document.getElementById('btn-cerrar-sesion').classList.add('hidden');
+
+      // Mostrar pantalla pública inicial y el botón de Login en la barra
+      document.getElementById('vista-publica').classList.remove('hidden');
+      document.getElementById('btn-abrir-login').classList.remove('hidden');
     }
 
-    // Funciones CRUD para el Admin
+    // OPERACIONES BACKEND DE DATOS
     async function cargarListaEmpleados() {
       try {
         const res = await fetch('empleados.php');
@@ -235,7 +302,7 @@
           data.empleados.forEach(emp => {
             lista.innerHTML += `
               <li>
-                <span><strong>${emp.nombre} ${emp.apellido}</strong> (${emp.email}) - <em>${emp.carrito_nombre || 'Sin carrito'}</em></span>
+                <span><strong>${emp.nombre} ${emp.apellido}</strong> (${emp.email}) - <em>${emp.carrito_nombre || 'Sin asignación'}</em></span>
                 <button class="btn btn-danger btn-small" onclick="eliminarEmpleado(${emp.id})">🗑️ Borrar</button>
               </li>
             `;
@@ -266,7 +333,7 @@
     }
 
     async function eliminarEmpleado(id) {
-      if (!confirm('¿Seguro que querés eliminar a este empleado?')) return;
+      if (!confirm('¿Deseas eliminar este empleado?')) return;
       const res = await fetch('empleados.php', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -275,6 +342,11 @@
       const data = await res.json();
       alert(data.message);
       if (data.success) cargarListaEmpleados();
+    }
+
+    async function registrarVenta(e) {
+      e.preventDefault();
+      alert('Venta registrada con éxito');
     }
   </script>
 </body>

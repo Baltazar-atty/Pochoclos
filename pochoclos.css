@@ -1,4 +1,4 @@
-/* RESET Y ESTILOS BASE */
+/* RESET Y BASE */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -12,30 +12,92 @@ body {
   padding-bottom: 40px;
 }
 
-/* NAVEGACIÓN PRINCIPAL */
+.hidden {
+  display: none !important;
+}
+
+/* PANTALLA DE LOGIN INICIAL */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #1e293b;
+  padding: 20px;
+}
+
+.login-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 420px;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.login-header h1 {
+  font-size: 1.8rem;
+  color: #0f172a;
+  margin-bottom: 5px;
+}
+
+.login-header p {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-bottom: 25px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 20px 0;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.divider span {
+  padding: 0 10px;
+}
+
+/* NAVEGACIÓN DENTRO DEL PANEL */
 nav {
   background-color: #1e293b;
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  flex-wrap: wrap;
+}
+
+.nav-brand {
+  color: #fff;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .nav-btn {
   background: transparent;
   border: 1px solid #334155;
   color: #94a3b8;
-  padding: 10px 18px;
+  padding: 8px 14px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   transition: all 0.2s;
 }
 
@@ -44,69 +106,42 @@ nav {
   color: #fff;
 }
 
-.nav-btn.active {
-  background-color: #e11d48;
-  color: #fff;
-  border-color: #e11d48;
-}
-
-/* LAYOUT Y SECCIONES */
+/* CONTENEDOR Y TARJETAS DE VISTAS */
 .container {
   max-width: 1000px;
-  margin: 20px auto;
+  margin: 25px auto;
   padding: 0 15px;
 }
 
-section {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* TARJETAS Y CONTENEDORES */
 .card {
   background: #fff;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
 }
 
 h2 {
   color: #0f172a;
   margin-bottom: 15px;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   border-bottom: 2px solid #f1f5f9;
   padding-bottom: 8px;
 }
 
-h3 {
-  color: #334155;
-  margin-bottom: 12px;
-  font-size: 1.1rem;
-}
-
-h4 {
-  color: #475569;
-  margin-bottom: 10px;
-}
-
-/* FORMULARIOS Y CONTROLES */
+/* FORMULARIOS Y BOTONES */
 .form-group {
   margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  text-align: left;
 }
 
 .form-group label {
-  font-size: 0.9rem;
+  display: block;
+  font-size: 0.85rem;
   font-weight: 600;
   color: #475569;
+  margin-bottom: 5px;
 }
 
 .form-control {
@@ -122,7 +157,6 @@ h4 {
   border-color: #e11d48;
 }
 
-/* BOTONES */
 .btn {
   padding: 10px 16px;
   border: none;
@@ -145,22 +179,19 @@ h4 {
   background-color: #be123c;
 }
 
-.btn-secondary {
-  background-color: #64748b;
-  color: white;
+.btn-outline {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  color: #334155;
 }
 
-.btn-secondary:hover {
-  background-color: #475569;
+.btn-outline:hover {
+  background: #f1f5f9;
 }
 
 .btn-danger {
   background-color: #dc2626;
   color: white;
-}
-
-.btn-danger:hover {
-  background-color: #b91c1c;
 }
 
 .btn-block {
@@ -172,15 +203,15 @@ h4 {
   font-size: 0.8rem;
 }
 
-/* TABLAS Y LISTAS DE EMPLEADOS */
-.zona-caliente-list {
+/* LISTAS */
+.item-list {
   list-style: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.zona-caliente-list li {
+.item-list li {
   background: #f8fafc;
   padding: 10px 14px;
   border-radius: 6px;
@@ -188,37 +219,4 @@ h4 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-/* MODAL FLOTANTE DE LOGIN */
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-card {
-  width: 100%;
-  max-width: 400px;
-  background: white;
-  border-radius: 8px;
-}
-
-.text-subtle {
-  color: #64748b;
-  font-size: 0.85rem;
-  margin-bottom: 15px;
-}
-
-.btn-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
 }
