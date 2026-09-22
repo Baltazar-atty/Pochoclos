@@ -1,8 +1,15 @@
 <?php
 session_start();
-require_once 'conexion.php'; // Tu archivo PDO de conexión
 
 header('Content-Type: application/json');
+
+// Manejar la inclusión de la conexión dentro de un try/catch
+try {
+    require_once 'conexion.php'; 
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
+    exit;
+}
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -14,23 +21,27 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
-$stmt = $pdo->prepare("SELECT id, nombre, apellido, password, rol, carrito_id FROM usuarios WHERE email = ?");
-$stmt->execute([$email]);
-$usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("SELECT id, nombre, apellido, password, rol, carrito_id FROM usuarios WHERE email = ?");
+    $stmt->execute([$email]);
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if ($usuario && password_verify($password, $usuario['password'])) {
-    // Iniciar sesión
-    $_SESSION['usuario_id'] = $usuario['id'];
-    $_SESSION['nombre'] = $usuario['nombre'];
-    $_SESSION['rol'] = $usuario['rol'];
-    $_SESSION['carrito_id'] = $usuario['carrito_id'];
+    if ($usuario && password_verify($password, $usuario['password'])) {
+        // Iniciar sesión
+        $_SESSION['usuario_id'] = $usuario['id'];
+        $_SESSION['nombre'] = $usuario['nombre'];
+        $_SESSION['rol'] = $usuario['rol'];
+        $_SESSION['carrito_id'] = $usuario['carrito_id'];
 
-    echo json_encode([
-        'success' => true,
-        'rol' => $usuario['rol'],
-        'nombre' => $usuario['nombre'],
-        'carrito_id' => $usuario['carrito_id']
-    ]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Credenciales incorrectas']);
+        echo json_encode([
+            'success' => true,
+            'rol' => $usuario['rol'],
+            'nombre' => $usuario['nombre'],
+            'carrito_id' => $usuario['carrito_id']
+        ]);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Credenciales incorrectas']);
+    }
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'message' => 'Error en la consulta a la base de datos']);
 }

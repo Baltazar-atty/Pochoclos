@@ -10,6 +10,59 @@
       display: none !important;
     }
 
+    /* BARRAS Y NAVEGACIÓN CENTRADA */
+    nav {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px 20px;
+    }
+
+    .nav-brand {
+      font-size: 1.4rem;
+      font-weight: bold;
+      text-align: center;
+      user-select: none;
+    }
+
+    .popcorn-interactive {
+      cursor: pointer;
+      display: inline-block;
+      transition: transform 0.2s ease;
+    }
+
+    .popcorn-interactive:hover {
+      transform: scale(1.2) rotate(10deg);
+    }
+
+    .nav-actions {
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    /* EFECTO DE POCHOCLOS VOLADORES (PARTÍCULAS) */
+    .popcorn-particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      font-size: 1.8rem;
+      animation: floatUpAndFade 1.2s ease-out forwards;
+    }
+
+    @keyframes floatUpAndFade {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(0.8) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(1.5) rotate(var(--rot));
+      }
+    }
+
     /* BARRA DE PROGRESO DE VENTAS */
     .progress-bar-container {
       background-color: #e2e8f0;
@@ -31,6 +84,64 @@
       color: white;
       font-size: 0.85rem;
       font-weight: bold;
+    }
+
+    /* SECCIÓN DE RESEÑAS Y COMENTARIOS */
+    .comments-container {
+      max-width: 600px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .rating-popcorns {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      font-size: 2rem;
+      margin: 10px 0;
+      cursor: pointer;
+    }
+
+    .popcorn-star {
+      filter: grayscale(100%);
+      opacity: 0.4;
+      transition: transform 0.2s, filter 0.2s;
+    }
+
+    .popcorn-star.active, .popcorn-star:hover {
+      filter: grayscale(0%);
+      opacity: 1;
+      transform: scale(1.15);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-row .form-group {
+      flex: 1;
+    }
+
+    .comment-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 15px;
+      margin-top: 12px;
+      text-align: left;
+    }
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .comment-author {
+      font-weight: bold;
+      color: #0f172a;
     }
 
     /* MODAL DE LOGIN EN LA ESQUINA SUPERIOR */
@@ -72,15 +183,18 @@
 </head>
 <body>
 
-  <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+  <!-- BARRA DE NAVEGACIÓN CON TÍTULO CENTRADO Y LOGIN A LA DERECHA -->
   <nav>
-    <div class="nav-brand">🍿 Pochoclos App</div>
+    <div class="nav-brand">
+      <span class="popcorn-interactive" onclick="explotarPochoclos(event)">🍿</span> Pochoclos App
+    </div>
+
     <div class="nav-actions">
-      <!-- Botón visible únicamente para el público en la esquina superior derecha -->
+      <!-- Botón de login para el personal (Esquina superior derecha) -->
       <button id="btn-abrir-login" class="nav-btn" onclick="abrirModalLogin()">🔑 Acceso Personal</button>
       
-      <!-- Información de usuario y botón salir cuando hay sesión iniciada -->
-      <span id="label-usuario" class="hidden" style="color: #94a3b8; align-self: center; font-size: 0.9rem; margin-right: 10px;"></span>
+      <!-- Controles de sesión activa -->
+      <span id="label-usuario" class="hidden" style="color: #94a3b8; font-size: 0.9rem; margin-right: 10px;"></span>
       <button id="btn-cerrar-sesion" class="nav-btn hidden" onclick="cerrarSesion()">🚪 Cerrar Sesión</button>
     </div>
   </nav>
@@ -88,7 +202,7 @@
   <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
 
-    <!-- 1. VISTA PÚBLICA (PÁGINA DE INICIO POR DEFECTO PARA CLIENTES) -->
+    <!-- 1. VISTA PÚBLICA (PÁGINA DE INICIO) -->
     <main id="vista-publica">
       
       <!-- TARJETA: BARRA DE POCHOCLOS VENDIDOS -->
@@ -117,10 +231,62 @@
         </div>
       </div>
 
+      <!-- TARJETA: SECCIÓN DE COMENTARIOS CENTRADA -->
+      <div class="card comments-container">
+        <h2>💬 Déjanos tu Opinión</h2>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">¿Qué tal estuvieron los pochoclos hoy?</p>
+
+        <form id="form-comentario" onsubmit="guardarComentario(event)">
+          
+          <!-- CALIFICACIÓN CON BOLSITAS DE POCHOCLO -->
+          <div class="form-group">
+            <label>Puntuación:</label>
+            <div class="rating-popcorns" id="rating-container">
+              <span class="popcorn-star" data-value="1" onclick="seleccionarCalificacion(1)">🍿</span>
+              <span class="popcorn-star" data-value="2" onclick="seleccionarCalificacion(2)">🍿</span>
+              <span class="popcorn-star" data-value="3" onclick="seleccionarCalificacion(3)">🍿</span>
+              <span class="popcorn-star" data-value="4" onclick="seleccionarCalificacion(4)">🍿</span>
+              <span class="popcorn-star" data-value="5" onclick="seleccionarCalificacion(5)">🍿</span>
+            </div>
+          </div>
+
+          <!-- NOMBRE Y APELLIDO -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="com-nombre">Nombre:</label>
+              <input type="text" id="com-nombre" class="form-control" placeholder="Juan" required>
+            </div>
+            <div class="form-group">
+              <label for="com-apellido">Apellido:</label>
+              <input type="text" id="com-apellido" class="form-control" placeholder="Pérez" required>
+            </div>
+          </div>
+
+          <!-- TEXTO DE OPINIÓN -->
+          <div class="form-group">
+            <label for="com-texto">Tu comentario:</label>
+            <input type="text" id="com-texto" class="form-control" placeholder="¡Escribí acá tu opinión!" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Enviar Comentario</button>
+        </form>
+
+        <!-- LISTA DE COMENTARIOS PUBLICADOS -->
+        <div id="lista-comentarios" style="margin-top: 25px;">
+          <!-- Comentarios de ejemplo iniciales -->
+          <div class="comment-item">
+            <div class="comment-header">
+              <span class="comment-author">Martina Rossi</span>
+              <span>🍿🍿🍿🍿🍿</span>
+            </div>
+            <p style="font-size: 0.9rem; color: #334155;">¡Los mejores pochoclos de la ciudad! Súper calentitos.</p>
+          </div>
+        </div>
+      </div>
+
     </main>
 
-
-    <!-- 2. VISTA EMPLEADO / VENDEDOR (OCULTA POR DEFECTO) -->
+    <!-- 2. VISTA EMPLEADO / VENDEDOR -->
     <section id="vista-empleado" class="hidden">
       <div class="card">
         <h2>🛒 Registrar Nueva Venta (Panel Vendedor)</h2>
@@ -143,8 +309,7 @@
       </div>
     </section>
 
-
-    <!-- 3. VISTA ADMINISTRADOR (OCULTA POR DEFECTO) -->
+    <!-- 3. VISTA ADMINISTRADOR -->
     <section id="vista-admin" class="hidden">
       <div class="card">
         <h2>👑 Gestión de Cuentas de Empleados (Panel Admin)</h2>
@@ -185,7 +350,7 @@
 
   </div>
 
-  <!-- MODAL FLOTANTE DE INICIO DE SESIÓN -->
+  <!-- MODAL DE LOGIN -->
   <div id="modal-login" class="modal-overlay hidden">
     <div class="modal-card">
       <button class="close-modal" onclick="cerrarModalLogin()">&times;</button>
@@ -214,8 +379,75 @@
   <!-- LÓGICA JAVASCRIPT -->
   <script>
     let usuarioSesion = null;
+    let calificacionSeleccionada = 5;
 
-    // CONTROL DE MODAL DE LOGIN
+    // EFECTO INTERACTIVO DE POCHOCLOS VOLADORES EN EL TÍTULO
+    function explotarPochoclos(e) {
+      const rect = e.target.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+
+      for (let i = 0; i < 12; i++) {
+        const p = document.createElement('div');
+        p.className = 'popcorn-particle';
+        p.textContent = '🍿';
+        
+        const dx = (Math.random() - 0.5) * 200 + 'px';
+        const dy = -(Math.random() * 150 + 50) + 'px';
+        const rot = (Math.random() - 0.5) * 360 + 'deg';
+
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.setProperty('--dx', dx);
+        p.style.setProperty('--dy', dy);
+        p.style.setProperty('--rot', rot);
+
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1200);
+      }
+    }
+
+    // CONTROL DE CALIFICACIÓN POR POCHOCLOS
+    function seleccionarCalificacion(valor) {
+      calificacionSeleccionada = valor;
+      const bolsitas = document.querySelectorAll('#rating-container .popcorn-star');
+      bolsitas.forEach((b, index) => {
+        if (index < valor) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+    }
+    // Inicializar con 5 bolsitas activadas
+    seleccionarCalificacion(5);
+
+    // GUARDAR COMENTARIO
+    function guardarComentario(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('com-nombre').value;
+      const apellido = document.getElementById('com-apellido').value;
+      const texto = document.getElementById('com-texto').value;
+
+      const bolsitasStr = '🍿'.repeat(calificacionSeleccionada);
+
+      const lista = document.getElementById('lista-comentarios');
+      const nuevoComentario = `
+        <div class="comment-item">
+          <div class="comment-header">
+            <span class="comment-author">${nombre} ${apellido}</span>
+            <span>${bolsitasStr}</span>
+          </div>
+          <p style="font-size: 0.9rem; color: #334155;">${texto}</p>
+        </div>
+      `;
+
+      lista.insertAdjacentHTML('afterbegin', nuevoComentario);
+      document.getElementById('form-comentario').reset();
+      seleccionarCalificacion(5);
+    }
+
+    // CONTROL DEL MODAL DE LOGIN
     function abrirModalLogin() {
       document.getElementById('modal-login').classList.remove('hidden');
     }
@@ -224,7 +456,7 @@
       document.getElementById('modal-login').classList.add('hidden');
     }
 
-    // PROCESAR AUTENTICACIÓN
+    // AUTENTICACIÓN Y ROLES
     async function procesarLogin(e) {
       e.preventDefault();
       const email = document.getElementById('login-email').value;
@@ -250,17 +482,13 @@
       }
     }
 
-    // NAVEGACIÓN Y CAMBIO DE VISTAS
     function activarVistaPanel(rol) {
-      // Ocultar vista pública
       document.getElementById('vista-publica').classList.add('hidden');
       document.getElementById('btn-abrir-login').classList.add('hidden');
 
-      // Ocultar paneles privados
       document.getElementById('vista-empleado').classList.add('hidden');
       document.getElementById('vista-admin').classList.add('hidden');
 
-      // Mostrar controles de sesión activa
       const labelUser = document.getElementById('label-usuario');
       const btnCerrar = document.getElementById('btn-cerrar-sesion');
       labelUser.classList.remove('hidden');
@@ -280,18 +508,16 @@
       usuarioSesion = null;
       document.getElementById('form-login').reset();
       
-      // Ocultar paneles de trabajo
       document.getElementById('vista-empleado').classList.add('hidden');
       document.getElementById('vista-admin').classList.add('hidden');
       document.getElementById('label-usuario').classList.add('hidden');
       document.getElementById('btn-cerrar-sesion').classList.add('hidden');
 
-      // Mostrar pantalla pública inicial y el botón de Login en la barra
       document.getElementById('vista-publica').classList.remove('hidden');
       document.getElementById('btn-abrir-login').classList.remove('hidden');
     }
 
-    // OPERACIONES BACKEND DE DATOS
+    // CRUD DE EMPLEADOS Y VENTAS
     async function cargarListaEmpleados() {
       try {
         const res = await fetch('empleados.php');
