@@ -2,13 +2,14 @@
 $host = "localhost";
 $user = "root";
 $pass = "";
-$db = "pochoclos_db";
+$db   = "pochoclos_db";
 
-$con = new mysqli($host, $user, $pass, $db);
+$con = mysqli_connect($host, $user, $pass, $db);
 
-if ($con->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+if (!$con) {
+    echo "ERROR_CONEXION: " . mysqli_connect_error();
+    exit;
 }
-echo "Conexión exitosa";
 
-?> 
+mysqli_set_charset($con, "utf8mb4");
+?>

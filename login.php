@@ -1,13 +1,11 @@
 <?php
 session_start();
-
 header('Content-Type: application/json');
 
-// Manejar la inclusión de la conexión dentro de un try/catch
 try {
-    require_once 'conexion.php'; 
+    require_once 'conexion.php';
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
+    echo json_encode(['success' => false, 'message' => 'No se pudo incluir conexion.php']);
     exit;
 }
 
@@ -21,13 +19,21 @@ if (empty($email) || empty($password)) {
     exit;
 }
 
-try {
-    $stmt = $pdo->prepare("SELECT id, nombre, apellido, password, rol, carrito_id FROM usuarios WHERE email = ?");
-    $stmt->execute([$email]);
-    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+// Preparar consulta con MySQLi
+$stmt = $con->prepare("SELECT id, nombre, apellido, password, rol, carrito_id FROM usuarios WHERE email = ?");
 
-    if ($usuario && password_verify($password, $usuario['password'])) {
-        // Iniciar sesión
+if (!$stmt) {
+    echo json_encode(['success' => false, 'message' => 'Error en la consulta SQL: ' . $con->error]);
+    exit;
+}
+
+$stmt->bind_param("s", $email);
+$stmt->execute();
+$resultado = $stmt->get_result();
+
+if ($usuario = $resultado->fetch_assoc()) {
+    // Verificar si la clave ingresada coincide con el hash almacenado
+    if (password_verify($password, $usuario['password'])) {
         $_SESSION['usuario_id'] = $usuario['id'];
         $_SESSION['nombre'] = $usuario['nombre'];
         $_SESSION['rol'] = $usuario['rol'];
@@ -40,8 +46,9 @@ try {
             'carrito_id' => $usuario['carrito_id']
         ]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Credenciales incorrectas']);
+        echo json_encode(['success' => false, 'message' => 'Contraseña incorrecta']);
     }
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => 'Error en la consulta a la base de datos']);
+} else {
+    echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
 }
+?>
