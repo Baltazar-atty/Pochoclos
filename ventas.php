@@ -6,7 +6,7 @@ header('Content-Type: application/json');
 
 $metodo = $_SERVER['REQUEST_METHOD'];
 
-// 1. OBTENER LISTA DE PRODUCTOS DESDE LA BASE DE DATOS
+// 1. OBTENER LISTA DE PRODUCTOS
 if ($metodo === 'GET') {
     try {
         $stmt = $pdo->query("SELECT id, tipo, subtipo, precio FROM productos");
@@ -18,7 +18,7 @@ if ($metodo === 'GET') {
     exit;
 }
 
-// 2. REGISTRAR UNA NUEVA VENTA
+// 2. REGISTRAR VENTA
 if ($metodo === 'POST') {
     if (!isset($_SESSION['rol']) || ($_SESSION['rol'] !== 'empleado' && $_SESSION['rol'] !== 'admin')) {
         echo json_encode(['success' => false, 'message' => 'Acceso no autorizado']);
