@@ -1,215 +1,1096 @@
-// Variables de estado simulado
-let totalBolsasVendidas = 128;
+let usuarioSesion = null;
+let calificacionSeleccionada = 5;
 
-function actualizarContadorYProgreso() {
-  document.getElementById('contador-ventas').innerText = totalBolsasVendidas;
+// ======================================================
+// EFECTO POCHOCLOS EN EL TÍTULO
+// ======================================================
 
-  const residuo = totalBolsasVendidas % 100;
-  const proximaMeta = (Math.floor(totalBolsasVendidas / 100) + 1) * 100;
+function explotarPochoclos(e) {
 
-  document.getElementById('contador-progreso-texto').innerText = `${residuo} / 100 bolsas`;
-  document.getElementById('progress-bar-fill').style.width = `${residuo}%`;
-  document.getElementById('meta-actual').innerText = proximaMeta;
-}
-
-// Cambiar entre Vistas / Roles
-function cambiarRol(rol) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('nav .nav-btn').forEach(b => b.classList.remove('active'));
-
-  document.getElementById(`vista-${rol}`).classList.add('active');
-  document.getElementById(`btn-${rol}`).classList.add('active');
-}
-
-// Lógica de Vendedor / Empleado
-function mostrarSubtipo() {
-  const tipo = document.getElementById('tipo-producto').value;
-  const grupoMaletin = document.getElementById('grupo-maletin');
-  grupoMaletin.style.display = tipo === 'maletin' ? 'block' : 'none';
-}
-
-function registrarVenta() {
-  const tipo = document.getElementById('tipo-producto').value;
-  let detalle = tipo;
-  
-  if (tipo === 'maletin') {
-    const subtipo = document.getElementById('tipo-maletin').value;
-    detalle += ` (${subtipo})`;
-  }
-
-  if (tipo === 'bolsa') {
-    totalBolsasVendidas++;
-    actualizarContadorYProgreso();
-
-    if (totalBolsasVendidas % 100 === 0) {
-      alert(`🎉 ¡FELICITACIONES! Esta fue la bolsa N° ${totalBolsasVendidas}.\n\n🎁 ¡SE REGALA UN POCHOCLO A ESTE CLIENTE!`);
-    } else {
-      alert(`Venta registrada con éxito: ${detalle}`);
-    }
-  } else {
-    alert(`Venta registrada con éxito: ${detalle}`);
-  }
-}
-
-// Lógica de Admin
-function modificarStock(carritoId) {
-  const cantidad = prompt("Ingrese la cantidad de cajas a añadir al carrito:");
-  if (cantidad && !isNaN(cantidad)) {
-    const elem = document.getElementById(`stock-${carritoId}`);
-    elem.innerText = parseInt(elem.innerText) + parseInt(cantidad);
-  }
-}
-
-// Lógica de Cliente
-function agregarReseña() {
-  const nombre = document.getElementById('nombre-cliente').value;
-  const comentario = document.getElementById('comentario').value;
-  const puntuacion = document.getElementById('puntuacion').value;
-
-  if (!nombre || !comentario) {
-    alert("Por favor completa tu nombre y comentario.");
-    return;
-  }
-
-  const contenedor = document.getElementById('lista-reseñas');
-  const nuevaReseña = document.createElement('div');
-  nuevaReseña.className = 'card review-card';
-  nuevaReseña.innerHTML = `
-    <div class="review-header">
-      <strong>${nombre}</strong>
-      <span class="pochoclos-rating">${puntuacion}</span>
-    </div>
-    <p class="review-body">"${comentario}"</p>
-  `;
-
-  contenedor.prepend(nuevaReseña);
-
-  document.getElementById('nombre-cliente').value = '';
-  document.getElementById('comentario').value = '';
-  alert("¡Gracias por tu reseña!");
-}
-
-// Efecto interactivo: Lluvia / Explosión de Pochoclos al presionar el ícono
-function lanzarPochoclos(e) {
   const rect = e.target.getBoundingClientRect();
-  const origenX = rect.left + rect.width / 2;
-  const origenY = rect.top + rect.height / 2;
 
-  for (let i = 0; i < 15; i++) {
-    const p = document.createElement('span');
-    p.innerText = '🍿';
+  const x = rect.left + rect.width / 2;
+  const y = rect.top + rect.height / 2;
+
+  for (let i = 0; i < 12; i++) {
+
+    const p = document.createElement('div');
+
     p.className = 'popcorn-particle';
-    
-    p.style.left = `${origenX}px`;
-    p.style.top = `${origenY}px`;
+    p.textContent = '🍿';
 
-    const angle = Math.random() * Math.PI * 2;
-    const velocity = 60 + Math.random() * 90;
-    const vx = Math.cos(angle) * velocity;
-    const vy = Math.sin(angle) * velocity - 40;
+    const dx =
+      (Math.random() - 0.5) * 200 + 'px';
 
-    p.style.setProperty('--vx', `${vx}px`);
-    p.style.setProperty('--vy', `${vy}px`);
+    const dy =
+      -(Math.random() * 150 + 50) + 'px';
+
+    const rot =
+      (Math.random() - 0.5) * 360 + 'deg';
+
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+
+    p.style.setProperty(
+      '--dx',
+      dx
+    );
+
+    p.style.setProperty(
+      '--dy',
+      dy
+    );
+
+    p.style.setProperty(
+      '--rot',
+      rot
+    );
 
     document.body.appendChild(p);
 
     setTimeout(() => {
       p.remove();
-    }, 900);
+    }, 1200);
   }
 }
 
-// Inicialización
-document.addEventListener('DOMContentLoaded', () => {
-  actualizarContadorYProgreso();
 
-  // Estado global de la sesión
-let usuarioSesion = null;
+// ======================================================
+// MODAL DE LOGIN
+// ======================================================
+
+function abrirModalLogin() {
+
+  const modal =
+    document.getElementById('modal-login');
+
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+}
+
+
+function cerrarModalLogin() {
+
+  const modal =
+    document.getElementById('modal-login');
+
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+
+// ======================================================
+// LOGIN MEDIANTE PHP
+// ======================================================
 
 async function procesarLogin(e) {
+
   e.preventDefault();
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
 
-  const res = await fetch('login.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
+  const emailElement =
+    document.getElementById('login-email');
 
-  const data = await res.json();
+  const passwordElement =
+    document.getElementById('login-password');
 
-  if (data.success) {
-    usuarioSesion = data;
-    cerrarModalLogin();
-    actualizarInterfazSegunRol();
-    
-    // Redirigir a la vista correspondiente
-    cambiarRol(data.rol);
-    alert(`¡Bienvenido/a ${data.nombre}!`);
-  } else {
-    alert(data.message);
+
+  if (!emailElement || !passwordElement) {
+
+    alert(
+      '❌ No se encontraron los campos de inicio de sesión.'
+    );
+
+    return;
+  }
+
+
+  const email =
+    emailElement.value.trim();
+
+  const password =
+    passwordElement.value.trim();
+
+
+  if (!email || !password) {
+
+    alert(
+      '⚠️ Completá el email y la contraseña.'
+    );
+
+    return;
+  }
+
+
+  console.log('=== INICIO LOGIN ===');
+  console.log('Email:', email);
+
+
+  try {
+
+    const res = await fetch(
+      'login.php',
+      {
+        method: 'POST',
+
+        headers: {
+          'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({
+          email: email,
+          password: password
+        })
+      }
+    );
+
+
+    console.log(
+      'Estado HTTP:',
+      res.status
+    );
+
+
+    const texto =
+      await res.text();
+
+
+    console.log(
+      'Respuesta exacta de PHP:'
+    );
+
+    console.log(texto);
+
+
+    let data;
+
+
+    try {
+
+      data =
+        JSON.parse(texto);
+
+    } catch (error) {
+
+      console.error(
+        'ERROR AL CONVERTIR JSON:',
+        error
+      );
+
+      alert(
+        '❌ PHP no está devolviendo JSON válido. Revisá la consola.'
+      );
+
+      return;
+    }
+
+
+    console.log(
+      'Datos recibidos:',
+      data
+    );
+
+
+    if (data.success) {
+
+      console.log(
+        'LOGIN CORRECTO'
+      );
+
+      console.log(
+        'Rol:',
+        data.rol
+      );
+
+      console.log(
+        'Nombre:',
+        data.nombre
+      );
+
+
+      usuarioSesion = data;
+
+
+      cerrarModalLogin();
+
+
+      activarPanel(
+        data.rol,
+        data.nombre
+      );
+
+
+    } else {
+
+      console.log(
+        'LOGIN RECHAZADO:',
+        data.message
+      );
+
+      alert(
+        data.message ||
+        'Credenciales incorrectas.'
+      );
+    }
+
+
+  } catch (err) {
+
+    console.error(
+      'ERROR REAL:',
+      err
+    );
+
+    alert(
+      '❌ Error al conectar con el servidor: ' +
+      err.message
+    );
   }
 }
 
-function actualizarInterfazSegunRol() {
-  const btnLogin = document.getElementById('btn-login-modal');
-  const btnAdmin = document.getElementById('btn-admin');
-  const btnEmpleado = document.getElementById('btn-empleado');
-  const btnLogout = document.getElementById('btn-logout');
 
-  if (!usuarioSesion) {
-    // Modo Cliente (público)
-    btnLogin.classList.remove('hidden');
-    btnAdmin.classList.add('hidden');
-    btnEmpleado.classList.add('hidden');
-    btnLogout.classList.add('hidden');
+// ======================================================
+// ACTIVAR PANEL SEGÚN EL ROL
+// ======================================================
+
+function activarPanel(rol, nombre) {
+
+  const vistaPublica =
+    document.getElementById(
+      'vista-publica'
+    );
+
+  const btnAbrirLogin =
+    document.getElementById(
+      'btn-abrir-login'
+    );
+
+  const labelUsuario =
+    document.getElementById(
+      'label-usuario'
+    );
+
+  const btnCerrarSesion =
+    document.getElementById(
+      'btn-cerrar-sesion'
+    );
+
+  const vistaAdmin =
+    document.getElementById(
+      'vista-admin'
+    );
+
+  const vistaEmpleado =
+    document.getElementById(
+      'vista-empleado'
+    );
+
+
+  if (vistaPublica) {
+    vistaPublica.classList.add(
+      'hidden'
+    );
+  }
+
+
+  if (btnAbrirLogin) {
+    btnAbrirLogin.classList.add(
+      'hidden'
+    );
+  }
+
+
+  if (labelUsuario) {
+
+    labelUsuario.classList.remove(
+      'hidden'
+    );
+
+    if (rol === 'admin') {
+
+      labelUsuario.textContent =
+        `👑 Admin: ${nombre}`;
+
+    } else {
+
+      labelUsuario.textContent =
+        `🛒 ${nombre}`;
+    }
+  }
+
+
+  if (btnCerrarSesion) {
+
+    btnCerrarSesion.classList.remove(
+      'hidden'
+    );
+  }
+
+
+  if (rol === 'admin') {
+
+    if (vistaEmpleado) {
+      vistaEmpleado.classList.add(
+        'hidden'
+      );
+    }
+
+    if (vistaAdmin) {
+
+      vistaAdmin.classList.remove(
+        'hidden'
+      );
+
+      renderizarEmpleados();
+    }
+
   } else {
-    btnLogin.classList.add('hidden');
-    btnLogout.classList.remove('hidden');
 
-    if (usuarioSesion.rol === 'admin') {
-      btnAdmin.classList.remove('hidden');
-      btnEmpleado.classList.remove('hidden');
-      cargarListaEmpleados(); // Cargar la lista en la pestaña admin
-    } else if (usuarioSesion.rol === 'empleado') {
-      btnAdmin.classList.add('hidden');
-      btnEmpleado.classList.remove('hidden');
+    if (vistaAdmin) {
+      vistaAdmin.classList.add(
+        'hidden'
+      );
+    }
+
+    if (vistaEmpleado) {
+      vistaEmpleado.classList.remove(
+        'hidden'
+      );
     }
   }
 }
 
-// Funciones CRUD de Empleados (Admin)
-async function cargarListaEmpleados() {
-  const res = await fetch('empleados.php');
-  const data = await res.json();
-  
-  if (data.success) {
-    const lista = document.getElementById('tabla-empleados');
-    lista.innerHTML = '';
 
-    data.empleados.forEach(emp => {
-      lista.innerHTML += `
-        <li>
-          <span><strong>${emp.nombre} ${emp.apellido}</strong> (${emp.email}) - <em>${emp.carrito_nombre || 'Sin carrito'}</em></span>
-          <button class="btn btn-primary btn-small" onclick="eliminarEmpleado(${emp.id})">🗑️ Borrar</button>
-        </li>
-      `;
-    });
+// ======================================================
+// CERRAR SESIÓN
+// ======================================================
+
+function cerrarSesion() {
+
+  usuarioSesion = null;
+
+
+  const vistaAdmin =
+    document.getElementById(
+      'vista-admin'
+    );
+
+  const vistaEmpleado =
+    document.getElementById(
+      'vista-empleado'
+    );
+
+  const labelUsuario =
+    document.getElementById(
+      'label-usuario'
+    );
+
+  const btnCerrarSesion =
+    document.getElementById(
+      'btn-cerrar-sesion'
+    );
+
+  const vistaPublica =
+    document.getElementById(
+      'vista-publica'
+    );
+
+  const btnAbrirLogin =
+    document.getElementById(
+      'btn-abrir-login'
+    );
+
+
+  if (vistaAdmin) {
+    vistaAdmin.classList.add(
+      'hidden'
+    );
+  }
+
+
+  if (vistaEmpleado) {
+    vistaEmpleado.classList.add(
+      'hidden'
+    );
+  }
+
+
+  if (labelUsuario) {
+    labelUsuario.classList.add(
+      'hidden'
+    );
+  }
+
+
+  if (btnCerrarSesion) {
+    btnCerrarSesion.classList.add(
+      'hidden'
+    );
+  }
+
+
+  if (vistaPublica) {
+    vistaPublica.classList.remove(
+      'hidden'
+    );
+  }
+
+
+  if (btnAbrirLogin) {
+    btnAbrirLogin.classList.remove(
+      'hidden'
+    );
   }
 }
 
-async function eliminarEmpleado(id) {
-  if (!confirm('¿Seguro que deseas eliminar esta cuenta de empleado?')) return;
 
-  const res = await fetch('empleados.php', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id })
-  });
+// ======================================================
+// GESTIÓN DE EMPLEADOS
+// ======================================================
 
-  const data = await res.json();
-  alert(data.message);
-  if (data.success) cargarListaEmpleados();
+async function renderizarEmpleados() {
+
+  const lista =
+    document.getElementById(
+      'tabla-empleados'
+    );
+
+
+  if (!lista) {
+    return;
+  }
+
+
+  lista.innerHTML =
+    '<li>Cargando empleados...</li>';
+
+
+  try {
+
+    const res =
+      await fetch(
+        'empleados.php'
+      );
+
+
+    const data =
+      await res.json();
+
+
+    if (data.success) {
+
+      lista.innerHTML = '';
+
+
+      if (
+        !data.empleados ||
+        data.empleados.length === 0
+      ) {
+
+        lista.innerHTML =
+          '<li style="color: #64748b;">No hay empleados registrados.</li>';
+
+        return;
+      }
+
+
+      data.empleados.forEach(
+        emp => {
+
+          lista.innerHTML += `
+
+            <li>
+
+              <span>
+
+                <strong>
+                  ${emp.nombre}
+                  ${emp.apellido}
+                </strong>
+
+                -
+                ${emp.email}
+
+                <br>
+
+                <small style="color: #64748b;">
+
+                  Carrito Asignado ID:
+                  ${emp.carrito_id || 'Sin asignación'}
+
+                </small>
+
+              </span>
+
+
+              <button
+                class="btn btn-danger"
+                onclick="eliminarEmpleado(${emp.id})"
+              >
+                Borrar
+              </button>
+
+            </li>
+
+          `;
+        }
+      );
+
+
+    } else {
+
+      lista.innerHTML =
+        '<li style="color: #ef4444;">Error al obtener empleados.</li>';
+    }
+
+
+  } catch (err) {
+
+    console.error(err);
+
+    lista.innerHTML =
+      '<li style="color: #ef4444;">Error de conexión con el servidor.</li>';
+  }
 }
-});
+
+
+// ======================================================
+// CREAR EMPLEADO
+// ======================================================
+
+async function crearEmpleado(e) {
+
+  e.preventDefault();
+
+
+  const nombre =
+    document
+      .getElementById('emp-nombre')
+      .value
+      .trim();
+
+
+  const apellido =
+    document
+      .getElementById('emp-apellido')
+      .value
+      .trim();
+
+
+  const email =
+    document
+      .getElementById('emp-email')
+      .value
+      .trim();
+
+
+  const password =
+    document
+      .getElementById('emp-password')
+      .value
+      .trim();
+
+
+  const carrito_id =
+    document
+      .getElementById('emp-carrito')
+      .value;
+
+
+  if (
+    !nombre ||
+    !apellido ||
+    !email ||
+    !password ||
+    !carrito_id
+  ) {
+
+    alert(
+      '⚠️ Completá todos los campos.'
+    );
+
+    return;
+  }
+
+
+  try {
+
+    const res =
+      await fetch(
+        'empleados.php',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body: JSON.stringify({
+            nombre,
+            apellido,
+            email,
+            password,
+            carrito_id
+          })
+        }
+      );
+
+
+    const data =
+      await res.json();
+
+
+    if (data.success) {
+
+      alert(
+        '✅ ' + data.message
+      );
+
+
+      e.target.reset();
+
+
+      renderizarEmpleados();
+
+
+    } else {
+
+      alert(
+        '⚠️ ' + data.message
+      );
+    }
+
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      '❌ Error al conectar con el servidor.'
+    );
+  }
+}
+
+
+// ======================================================
+// ELIMINAR EMPLEADO
+// ======================================================
+
+async function eliminarEmpleado(id) {
+
+  if (
+    !confirm(
+      '¿Seguro que querés eliminar la cuenta de este empleado?'
+    )
+  ) {
+
+    return;
+  }
+
+
+  try {
+
+    const res =
+      await fetch(
+        'empleados.php',
+        {
+          method: 'DELETE',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body: JSON.stringify({
+            id: id
+          })
+        }
+      );
+
+
+    const data =
+      await res.json();
+
+
+    if (data.success) {
+
+      alert(
+        '✅ ' + data.message
+      );
+
+
+      renderizarEmpleados();
+
+
+    } else {
+
+      alert(
+        '⚠️ ' + data.message
+      );
+    }
+
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      '❌ Error al procesar la eliminación.'
+    );
+  }
+}
+
+
+// ======================================================
+// SISTEMA DE CALIFICACIÓN POR POCHOCLOS
+// ======================================================
+
+function seleccionarCalificacion(valor) {
+
+  calificacionSeleccionada =
+    valor;
+
+
+  const bolsitas =
+    document.querySelectorAll(
+      '#rating-container .popcorn-star'
+    );
+
+
+  bolsitas.forEach(
+    (b, index) => {
+
+      if (index < valor) {
+
+        b.classList.add(
+          'active'
+        );
+
+      } else {
+
+        b.classList.remove(
+          'active'
+        );
+      }
+    }
+  );
+}
+
+
+// ======================================================
+// GUARDAR COMENTARIO
+// ======================================================
+
+function guardarComentario(e) {
+
+  e.preventDefault();
+
+
+  const nombre =
+    document
+      .getElementById('com-nombre')
+      .value;
+
+
+  const apellido =
+    document
+      .getElementById('com-apellido')
+      .value;
+
+
+  const texto =
+    document
+      .getElementById('com-texto')
+      .value;
+
+
+  const bolsitasStr =
+    '🍿'.repeat(
+      calificacionSeleccionada
+    );
+
+
+  const lista =
+    document.getElementById(
+      'lista-comentarios'
+    );
+
+
+  const nuevoComentario = `
+
+    <div class="comment-item">
+
+      <div class="comment-header">
+
+        <span class="comment-author">
+          ${nombre} ${apellido}
+        </span>
+
+        <span>
+          ${bolsitasStr}
+        </span>
+
+      </div>
+
+      <p
+        style="
+          font-size: 0.88rem;
+          color: #334155;
+        "
+      >
+        ${texto}
+      </p>
+
+    </div>
+
+  `;
+
+
+  if (lista) {
+
+    lista.insertAdjacentHTML(
+      'afterbegin',
+      nuevoComentario
+    );
+  }
+
+
+  e.target.reset();
+
+
+  seleccionarCalificacion(5);
+}
+
+
+// ======================================================
+// SISTEMA DE VENTAS
+// ======================================================
+
+async function registrarVenta(e) {
+
+  e.preventDefault();
+
+
+  // Obtener los elementos del formulario
+  const productoElement =
+    document.getElementById(
+      'venta-producto'
+    );
+
+
+  const cantidadElement =
+    document.getElementById(
+      'venta-cantidad'
+    );
+
+
+  // Verificar que existan
+  if (
+    !productoElement ||
+    !cantidadElement
+  ) {
+
+    alert(
+      '❌ No se encontraron los campos de venta.'
+    );
+
+    return;
+  }
+
+
+  // Obtener valores
+  const producto_id =
+    parseInt(
+      productoElement.value
+    );
+
+
+  const cantidad =
+    parseInt(
+      cantidadElement.value
+    );
+
+
+  // Validar producto
+  if (
+    !producto_id ||
+    producto_id <= 0
+  ) {
+
+    alert(
+      '⚠️ Seleccioná un producto.'
+    );
+
+    return;
+  }
+
+
+  // Validar cantidad
+  if (
+    !cantidad ||
+    cantidad <= 0
+  ) {
+
+    alert(
+      '⚠️ La cantidad debe ser mayor a 0.'
+    );
+
+    return;
+  }
+
+
+  console.log(
+    '=== REGISTRANDO VENTA ==='
+  );
+
+  console.log(
+    'Producto ID:',
+    producto_id
+  );
+
+  console.log(
+    'Cantidad:',
+    cantidad
+  );
+
+
+  try {
+
+    const res =
+      await fetch(
+        'ventas.php',
+        {
+          method: 'POST',
+
+          headers: {
+            'Content-Type':
+              'application/json'
+          },
+
+          body: JSON.stringify({
+
+            producto_id:
+              producto_id,
+
+            cantidad:
+              cantidad
+
+          })
+        }
+      );
+
+
+    console.log(
+      'Estado HTTP:',
+      res.status
+    );
+
+
+    // Primero obtenemos texto
+    // para poder detectar errores PHP
+    const texto =
+      await res.text();
+
+
+    console.log(
+      'Respuesta de ventas.php:',
+      texto
+    );
+
+
+    let data;
+
+
+    try {
+
+      data =
+        JSON.parse(texto);
+
+    } catch (error) {
+
+      console.error(
+        'Error convirtiendo respuesta a JSON:',
+        error
+      );
+
+
+      alert(
+        '❌ ventas.php no está devolviendo JSON válido.\n\nRevisá la consola del navegador.'
+      );
+
+      return;
+    }
+
+
+    // ==============================================
+    // VENTA CORRECTA
+    // ==============================================
+
+    if (data.success) {
+
+      alert(
+
+        '✅ ' +
+        data.message +
+
+        '\n\nProducto: ' +
+        data.producto +
+
+        '\nCantidad: ' +
+        data.cantidad +
+
+        '\nCarrito: #' +
+        data.carrito_id
+
+      );
+
+
+      // Limpiar formulario
+      productoElement.value = '';
+
+      cantidadElement.value = '1';
+
+
+      console.log(
+        'VENTA REGISTRADA CORRECTAMENTE'
+      );
+
+
+    } else {
+
+      // ============================================
+      // ERROR DE PHP
+      // ============================================
+
+      alert(
+        '⚠️ ' +
+        (
+          data.message ||
+          'No se pudo registrar la venta.'
+        )
+      );
+
+
+      console.error(
+        'Error informado por ventas.php:',
+        data.message
+      );
+    }
+
+
+  } catch (err) {
+
+    console.error(
+      'ERROR REAL:',
+      err
+    );
+
+
+    alert(
+      '❌ Error de conexión con ventas.php.\n\n' +
+      err.message
+    );
+  }
+}
