@@ -288,3 +288,41 @@ header {
   cursor: pointer;
   color: #64748b;
 }
+
+/* ESTILOS PARA LA BOTONERA DE PRODUCTOS */
+.botonera-productos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.btn-producto {
+  background-color: #ffffff;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 14px 8px;
+  text-align: center;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-producto:hover {
+  border-color: #0284c7;
+  background-color: #f0f9ff;
+}
+
+.btn-producto.selected {
+  border-color: #e11d48;
+  background-color: #fff1f2;
+  color: #e11d48;
+}
+
+.btn-producto small {
+  display: block;
+  font-weight: normal;
+  color: #64748b;
+  margin-top: 4px;
+}
