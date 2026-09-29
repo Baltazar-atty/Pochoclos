@@ -20,7 +20,7 @@ if (empty($email) || empty($password)) {
 }
 
 // Preparar consulta con MySQLi
-$stmt = $con->prepare("SELECT id, nombre, apellido, password, rol, carrito_id FROM usuarios WHERE email = ?");
+$stmt = $con->prepare("SELECT id, email, nombre, apellido, password, rol, carrito_id FROM usuarios WHERE email = ?");
 
 if (!$stmt) {
     echo json_encode(['success' => false, 'message' => 'Error en la consulta SQL: ' . $con->error]);
