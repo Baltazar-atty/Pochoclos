@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-09-2026 a las 23:43:55
+-- Tiempo de generación: 30-09-2026 a las 00:39:18
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -63,7 +63,7 @@ CREATE TABLE `configuracion_promo` (
 --
 
 INSERT INTO `configuracion_promo` (`id`, `total_ventas_historicas`, `ventas_hoy`, `meta_actual`) VALUES
-(1, 4500, 128, 200);
+(1, 4501, 129, 200);
 
 -- --------------------------------------------------------
 
@@ -136,7 +136,8 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `rol`, `carrito_id`, `fecha_creacion`) VALUES
-(1, 'Admin', 'Principal', 'admin@pochoclos.com', '$2y$10$e.S1g3K0Y1b7K...HashDeEjemplo', 'admin', NULL, '2026-09-22 21:42:50');
+(2, 'Administrador', 'General', 'admin@pochoclos.com', '$2y$10$pCSDSBwhqcPqkXPF7grzVe8n/EnjAHn6UGja82jbfWBIR6fDVSSSa', 'admin', NULL, '2026-09-22 23:43:30'),
+(3, 'lautaro', 'galvagno', 'lautarooscar@gmail.com', '$2y$10$Kp4rqWfKxZwSqsSqtu.wauLqFzZ1zT6HZiJLsB.VXuSGGYqT8DdXS', 'empleado', 2, '2026-09-23 00:26:16');
 
 -- --------------------------------------------------------
 
@@ -149,8 +150,17 @@ CREATE TABLE `ventas` (
   `carrito_id` int(11) NOT NULL,
   `producto_id` int(11) NOT NULL,
   `cantidad` int(11) NOT NULL DEFAULT 1,
-  `fecha_venta` timestamp NOT NULL DEFAULT current_timestamp()
+  `fecha_venta` timestamp NOT NULL DEFAULT current_timestamp(),
+  `latitud` decimal(10,8) DEFAULT NULL,
+  `longitud` decimal(11,8) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `ventas`
+--
+
+INSERT INTO `ventas` (`id`, `carrito_id`, `producto_id`, `cantidad`, `fecha_venta`, `latitud`, `longitud`) VALUES
+(1, 2, 2, 1, '2026-09-29 22:32:16', NULL, NULL);
 
 --
 -- Índices para tablas volcadas
@@ -229,13 +239,13 @@ ALTER TABLE `resenas`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- Restricciones para tablas volcadas

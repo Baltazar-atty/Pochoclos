@@ -33,6 +33,39 @@ function explotarPochoclos(e) {
 }
 
 // ======================================================
+// GEOLOCALIZACIÓN
+// ======================================================
+function obtenerUbicacion() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      alert("El dispositivo no permite obtener la ubicación.");
+      resolve({ latitud: null, longitud: null });
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (posicion) => {
+        const lat = posicion.coords.latitude;
+        const lng = posicion.coords.longitude;
+
+        const inputLat = document.getElementById("latitud");
+        const inputLng = document.getElementById("longitud");
+
+        if (inputLat) inputLat.value = lat;
+        if (inputLng) inputLng.value = lng;
+
+        resolve({ latitud: lat, longitud: lng });
+      },
+      (error) => {
+        console.warn("No se pudo obtener la ubicación:", error.message);
+        resolve({ latitud: null, longitud: null });
+      },
+      { timeout: 5000, enableHighAccuracy: true }
+    );
+  });
+}
+
+// ======================================================
 // MODAL & AUTENTICACIÓN (LOGIN / LOGOUT)
 // ======================================================
 function abrirModalLogin() {
@@ -49,18 +82,10 @@ async function procesarLogin(e) {
   const emailEl = document.getElementById('login-email');
   const passwordEl = document.getElementById('login-password');
 
-  if (!emailEl || !passwordEl) {
-    alert('❌ No se encontraron los campos de inicio de sesión.');
-    return;
-  }
+  if (!emailEl || !passwordEl) return;
 
   const email = emailEl.value.trim();
   const password = passwordEl.value.trim();
-
-  if (!email || !password) {
-    alert('⚠️ Completá el email y la contraseña.');
-    return;
-  }
 
   try {
     const res = await fetch('login.php', {
@@ -75,8 +100,7 @@ async function procesarLogin(e) {
     try {
       data = JSON.parse(texto);
     } catch {
-      console.error('Respuesta recibida de login.php:', texto);
-      alert('❌ Respuesta inválida del servidor (no es JSON). Revisá la consola.');
+      alert('❌ Respuesta inválida del servidor (no es JSON).');
       return;
     }
 
@@ -154,9 +178,7 @@ async function renderizarEmpleados() {
               Carrito Asignado ID: ${emp.carrito_id || 'Sin asignación'}
             </small>
           </span>
-          <button class="btn btn-danger" onclick="eliminarEmpleado(${emp.id})">
-            Borrar
-          </button>
+          <button class="btn btn-danger" onclick="eliminarEmpleado(${emp.id})">Borrar</button>
         </li>
       `).join('');
     } else {
@@ -175,11 +197,6 @@ async function crearEmpleado(e) {
   const email = document.getElementById('emp-email')?.value.trim();
   const password = document.getElementById('emp-password')?.value.trim();
   const carrito_id = document.getElementById('emp-carrito')?.value;
-
-  if (!nombre || !apellido || !email || !password || !carrito_id) {
-    alert('⚠️ Completá todos los campos.');
-    return;
-  }
 
   try {
     const res = await fetch('empleados.php', {
@@ -226,7 +243,7 @@ async function eliminarEmpleado(id) {
 }
 
 // ======================================================
-// SISTEMA DE VENTAS
+// SISTEMA DE VENTAS CON COORDENADAS
 // ======================================================
 async function registrarVenta(e) {
   e.preventDefault();
@@ -234,10 +251,7 @@ async function registrarVenta(e) {
   const productoElement = document.getElementById('venta-producto');
   const cantidadElement = document.getElementById('venta-cantidad');
 
-  if (!productoElement || !cantidadElement) {
-    alert('❌ No se encontraron los campos de venta.');
-    return;
-  }
+  if (!productoElement || !cantidadElement) return;
 
   const producto_id = parseInt(productoElement.value, 10);
   const cantidad = parseInt(cantidadElement.value, 10);
@@ -252,11 +266,26 @@ async function registrarVenta(e) {
     return;
   }
 
+  // Intentar obtener las coordenadas existentes en los inputs o capturarlas del GPS
+  let latitud = document.getElementById('latitud')?.value || null;
+  let longitud = document.getElementById('longitud')?.value || null;
+
+  if (!latitud || !longitud) {
+    const coords = await obtenerUbicacion();
+    latitud = coords.latitud;
+    longitud = coords.longitud;
+  }
+
   try {
     const res = await fetch('ventas.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ producto_id, cantidad })
+      body: JSON.stringify({
+        producto_id,
+        cantidad,
+        latitud,
+        longitud
+      })
     });
 
     const texto = await res.text();
@@ -265,15 +294,17 @@ async function registrarVenta(e) {
     try {
       data = JSON.parse(texto);
     } catch {
-      console.error('=== RESPUESTA RECIBIDA DE VENTAS.PHP ===');
-      console.error(texto);
-      alert('❌ ventas.php no devolvió JSON válido. Abrí la consola (F12) para ver la respuesta exacta.');
+      alert('❌ ventas.php no devolvió JSON válido.');
       return;
     }
 
     if (data.success) {
       alert(`✅ ${data.message}\n\nProducto: ${data.producto || ''}\nCantidad: ${data.cantidad || cantidad}\nCarrito: #${data.carrito_id || ''}`);
       e.target.reset();
+
+      // Limpiar inputs de coordenadas si existen
+      if (document.getElementById('latitud')) document.getElementById('latitud').value = '';
+      if (document.getElementById('longitud')) document.getElementById('longitud').value = '';
     } else {
       alert(`⚠️ ${data.message || 'No se pudo registrar la venta.'}`);
     }
