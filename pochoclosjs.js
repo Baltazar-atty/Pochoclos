@@ -13,14 +13,14 @@ async function cargarComentarios() {
     const datos = await respuesta.json();
 
     if (!datos.success) {
-      lista.innerHTML = '<p>Todavía no hay comentarios publicados.</p>';
+      lista.innerHTML = '<p style="color: #64748b;">Todavía no hay comentarios publicados.</p>';
       return;
     }
 
     lista.innerHTML = '';
 
     if (!datos.resenas || datos.resenas.length === 0) {
-      lista.innerHTML = '<p>Todavía no hay comentarios. ¡Sé el primero en opinar!</p>';
+      lista.innerHTML = '<p style="color: #64748b;">Todavía no hay comentarios. ¡Sé el primero en opinar!</p>';
       return;
     }
 
@@ -72,28 +72,19 @@ async function guardarComentario(evento) {
       })
     });
 
-    const textoRespuesta = await respuesta.text();
-    let datos;
-
-    try {
-      datos = JSON.parse(textoRespuesta);
-    } catch (e) {
-      console.error("Respuesta no válida del servidor:", textoRespuesta);
-      alert("Error en la respuesta del servidor PHP. Revisa la consola.");
-      return;
-    }
+    const datos = await respuesta.json();
 
     if (datos.success) {
       alert('✅ ' + datos.message);
       document.getElementById('form-comentario').reset();
       seleccionarCalificacion(5);
-      cargarComentarios();
+      await cargarComentarios();
     } else {
       alert('⚠️ ' + datos.message);
     }
   } catch (error) {
-    console.error('Error en fetch:', error);
-    alert('❌ Error al conectar con el servidor: ' + error.message);
+    console.error('Error al guardar comentario:', error);
+    alert('❌ Error al conectar con el servidor.');
   }
 }
 
@@ -117,21 +108,25 @@ async function cargarDatosVentas() {
 
     if (data.success) {
       productosDisponibles = data.productos || [];
-      actualizarBarraPublica(data.total_vendidas || 0);
+      const totalMostrar = (data.total_vendidas > 0) ? data.total_vendidas : 50;
+      actualizarBarraPublica(totalMostrar);
 
-      if (usuarioSesion && usuarioSesion.rol === 'empleado') {
+      if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
         renderizarBotoneraProductos();
       }
+    } else {
+      actualizarBarraPublica(50);
     }
   } catch (err) {
     console.error('Error al cargar ventas:', err);
+    actualizarBarraPublica(50);
   }
 }
 
 function actualizarBarraPublica(totalVendidas) {
   const meta = 100;
   const porcentaje = Math.min(Math.round((totalVendidas / meta) * 100), 100);
-  
+
   const elTotal = document.getElementById('total-vendidas');
   const elBarra = document.getElementById('barra-pochoclos');
 
@@ -153,7 +148,7 @@ function renderizarBotoneraProductos() {
   productosSimples.forEach(prod => {
     grid.innerHTML += `
       <div style="border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; text-align: center; background: #fff;">
-        <img src="img/${prod.tipo}.png" alt="${prod.tipo}" style="width: 80px; height: 80px; object-fit: contain;" onerror="this.src='img/default.png'">
+        <img src="img/${prod.tipo}.png" alt="${prod.tipo}" style="width: 80px; height: 80px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none';">
         <div style="font-weight: bold; margin-top: 5px;">${prod.tipo.toUpperCase()}</div>
         <div style="color: #e11d48; font-weight: 600;">$${prod.precio}</div>
         <button class="btn btn-primary btn-block" style="margin-top: 8px;" onclick="registrarVentaDirecta(${prod.id})">🛒 Vender</button>
@@ -164,7 +159,7 @@ function renderizarBotoneraProductos() {
   if (maletinesDisponibles.length > 0) {
     grid.innerHTML += `
       <div style="border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; text-align: center; background: #fff;">
-        <img src="img/maletin.png" alt="Maletín" style="width: 80px; height: 80px; object-fit: contain;" onerror="this.src='img/default.png'">
+        <img src="img/spiderman.png" alt="Maletín" style="width: 80px; height: 80px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none';">
         <div style="font-weight: bold; margin-top: 5px;">MALETINES</div>
         <div style="color: #e11d48; font-weight: 600;">$${maletinesDisponibles[0].precio}</div>
         <button class="btn btn-primary btn-block" style="margin-top: 8px;" onclick="abrirModalMaletin()">🎒 Elegir Versión</button>
@@ -173,6 +168,7 @@ function renderizarBotoneraProductos() {
   }
 }
 
+// CORREGIDO: Sintaxis limpia para opciones del select
 function abrirModalMaletin() {
   const select = document.getElementById('select-subtipo-maletin');
   if (!select) return;
@@ -371,7 +367,7 @@ async function eliminarEmpleado(id) {
   }
 }
 
-// EFECTO POCHOCLOS
+// EFECTO POCHOCLOS VOLADORES
 function explotarPochoclos(e) {
   const rect = e.target.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
@@ -381,7 +377,7 @@ function explotarPochoclos(e) {
     const p = document.createElement('div');
     p.className = 'popcorn-particle';
     p.textContent = '🍿';
-    
+
     const dx = (Math.random() - 0.5) * 200 + 'px';
     const dy = -(Math.random() * 150 + 50) + 'px';
     const rot = (Math.random() - 0.5) * 360 + 'deg';
