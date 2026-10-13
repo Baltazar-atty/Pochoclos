@@ -351,39 +351,17 @@ function guardarComentario(e) {
   seleccionarCalificacion(5);
 }
 // ======================================================
-// SELECT PERSONALIZADO CON IMÁGENES
+// SELECCIÓN DE PRODUCTO EN BOTONERA
 // ======================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const customSelect = document.getElementById('customSelect');
-    if (!customSelect) return;
+function seleccionarProducto(id, elemento) {
+  // Actualizar el valor del input oculto que lee registrarVenta()
+  const inputProducto = document.getElementById('venta-producto');
+  if (inputProducto) {
+    inputProducto.value = id;
+  }
 
-    const selected = customSelect.querySelector('.select-selected');
-    const items = customSelect.querySelector('.select-items');
-    const options = customSelect.querySelectorAll('.select-option');
-    const hiddenInput = document.getElementById('venta-producto');
-    const selectedImg = document.getElementById('selectedImg');
-    const selectedText = document.getElementById('selectedText');
-
-    selected.addEventListener('click', (e) => {
-        e.stopPropagation();
-        items.classList.toggle('select-hide');
-    });
-
-    options.forEach(option => {
-        option.addEventListener('click', () => {
-            const value = option.getAttribute('data-value');
-            const imgSrc = option.getAttribute('data-img');
-            const text = option.querySelector('span').textContent;
-
-            hiddenInput.value = value;
-            selectedImg.src = imgSrc;
-            selectedText.textContent = text;
-            
-            items.classList.add('select-hide');
-        });
-    });
-
-    document.addEventListener('click', () => {
-        items.classList.add('select-hide');
-    });
-});
+  // Quitar la clase 'active' de todos los botones y ponérsela al presionado
+  const botones = document.querySelectorAll('.product-btn');
+  botones.forEach(btn => btn.classList.remove('active'));
+  elemento.classList.add('active');
+}

@@ -327,60 +327,53 @@ header {
   margin-top: 4px;
 }
 
-/* Estilos para el Select Personalizado con Imágenes */
-.custom-select-container {
-  position: relative;
-  width: 100%;
-  font-family: inherit;
-  user-select: none;
+/* Estilos para la botonera de productos */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 5px;
 }
 
-.select-selected {
-  background-color: #fff;
-  border: 1px solid #cbd5e1;
-  padding: 10px 12px;
+.product-btn {
+  background-color: #f8fafc;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.product-btn img {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
   border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.95rem;
 }
 
-.select-items {
-  position: absolute;
-  background-color: #ffffff;
-  border: 1px solid #cbd5e1;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 99;
-  border-radius: 0 0 6px 6px;
-  max-height: 220px;
-  overflow-y: auto;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+.product-btn span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
 }
 
-.select-hide {
-  display: none;
+.product-btn small {
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
-.select-option {
-  padding: 10px 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.95rem;
-}
-
-.select-option:hover {
+.product-btn:hover {
+  border-color: #94a3b8;
   background-color: #f1f5f9;
 }
 
-.option-img {
-  width: 28px;
-  height: 28px;
-  object-fit: cover;
-  border-radius: 4px;
+/* Estado cuando el botón está seleccionado */
+.product-btn.active {
+  border-color: #e11d48;
+  background-color: #fff1f2;
 }

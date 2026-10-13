@@ -147,76 +147,77 @@
 
     <!-- 3. VISTA EMPLEADO / VENDEDOR -->
   <!-- 3. VISTA EMPLEADO / VENDEDOR -->
-<section id="vista-empleado" class="hidden">
+<!-- 3. VISTA EMPLEADO / VENDEDOR -->
+    <section id="vista-empleado" class="hidden">
+      <div class="card">
+        <h2>🛒 Panel Vendedor</h2>
+        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
+          Seleccioná un producto de la botonera y la cantidad para registrar la venta.
+        </p>
 
-  <div class="card">
+        <form onsubmit="registrarVenta(event)">
 
-    <h2>🛒 Panel Vendedor</h2>
+          <!-- BOTONERA DE PRODUCTOS CON IMÁGENES -->
+          <div class="form-group">
+            <label>Selecciona el Producto:</label>
+            <div class="product-grid">
+              
+              <div class="product-btn" data-value="1" onclick="seleccionarProducto(1, this)">
+                <img src="imagenes/bolsa_media.jpg" alt="Bolsa">
+                <span>Bolsa</span>
+                <small>$1500</small>
+              </div>
 
-    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
-      Seleccioná el producto y la cantidad para registrar una venta.
-    </p>
+              <div class="product-btn" data-value="2" onclick="seleccionarProducto(2, this)">
+                <img src="imagenes/caja.jpg" alt="Caja">
+                <span>Caja</span>
+                <small>$2500</small>
+              </div>
 
-    <form onsubmit="registrarVenta(event)">
+              <div class="product-btn" data-value="3" onclick="seleccionarProducto(3, this)">
+                <img src="imagenes/maletin_spiderman.jpeg" alt="Spiderman">
+                <span>Spiderman</span>
+                <small>$4000</small>
+              </div>
 
-      <!-- PRODUCTO -->
-      <!-- PRODUCTO -->
-      <div class="form-group">
-        <label for="venta-producto">Producto:</label>
+              <div class="product-btn" data-value="4" onclick="seleccionarProducto(4, this)">
+                <img src="imagenes/maletin_cars.jpeg" alt="Cars">
+                <span>Cars</span>
+                <small>$4000</small>
+              </div>
 
-        <!-- Contenedor del Select Personalizado con Imágenes -->
-        <div class="custom-select-container" id="customSelect">
-          <div class="select-selected">
-            <img src="image.png" alt="Bolsa" class="option-img" id="selectedImg">
-            <span id="selectedText">Bolsa - $1500</span>
+              <div class="product-btn" data-value="5" onclick="seleccionarProducto(5, this)">
+                <img src="imagenes/maletin_dragon_ball.jpeg" alt="Dragon Ball">
+                <span>Dragon Ball</span>
+                <small>$4000</small>
+              </div>
+
+              <div class="product-btn active" data-value="6" onclick="seleccionarProducto(6, this)">
+                <img src="imagenes/maletin_barbie.jpeg" alt="Barbie">
+                <span>Barbie</span>
+                <small>$4000</small>
+              </div>
+
+            </div>
+
+            <!-- Input oculto que mantiene el ID del producto seleccionado para registrar la venta -->
+            <input type="hidden" id="venta-producto" value="6">
           </div>
-          
-          <div class="select-items select-hide">
-            <div class="select-option" data-value="1" data-img="img/bolsa.jpeg">
-              <img src="bolsamedia.jpg" class="option-img">
-              <span>Bolsa - $1500</span>
-            </div>
-            <div class="select-option" data-value="2" data-img="img/caja.jpeg">
-              <img src="caja.jpg" class="option-img">
-              <span>Caja - $2500</span>
-            </div>
-            <div class="select-option" data-value="3" data-img="img/spiderman.jpeg">
-              <img src="spiderman.jpeg" class="option-img">
-              <span>Maletín Spiderman - $4000</span>
-            </div>
-            <div class="select-option" data-value="4" data-img="cars.jpeg">
-              <img src="cars.jpeg" class="option-img">
-              <span>Maletín Cars - $4000</span>
-            </div>
-            <div class="select-option" data-value="5" data-img="img/dragonball.jpeg">
-              <img src="dragon_ball.jpeg" class="option-img">
-              <span>Maletín Dragon Ball - $4000</span>
-            </div>
-            <div class="select-option" data-value="6" data-img="barbie.jpeg">
-              <img src="barbie.jpeg" class="option-img">
-              <span>Maletín Barbie - $4000</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- Input oculto para enviar el ID del producto -->
-        <input type="hidden" name="producto_id" id="venta-producto" value="1">
+          <!-- CANTIDAD -->
+          <div class="form-group" style="margin-top: 15px;">
+            <label for="venta-cantidad">Cantidad:</label>
+            <input type="number" id="venta-cantidad" class="form-control" value="1" min="1" required>
+          </div>
+
+          <!-- BOTÓN -->
+          <button type="submit" class="btn btn-primary btn-block">
+            ✅ Confirmar Venta
+          </button>
+
+        </form>
       </div>
-
-
-      <!-- BOTÓN -->
-      <button
-        type="submit"
-        class="btn btn-primary btn-block"
-      >
-        ✅ Confirmar Venta
-      </button>
-
-    </form>
-
-  </div>
-
-</section>
+    </section>
 
   </div>
 
