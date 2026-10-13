@@ -350,3 +350,40 @@ function guardarComentario(e) {
   e.target.reset();
   seleccionarCalificacion(5);
 }
+// ======================================================
+// SELECT PERSONALIZADO CON IMÁGENES
+// ======================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const customSelect = document.getElementById('customSelect');
+    if (!customSelect) return;
+
+    const selected = customSelect.querySelector('.select-selected');
+    const items = customSelect.querySelector('.select-items');
+    const options = customSelect.querySelectorAll('.select-option');
+    const hiddenInput = document.getElementById('venta-producto');
+    const selectedImg = document.getElementById('selectedImg');
+    const selectedText = document.getElementById('selectedText');
+
+    selected.addEventListener('click', (e) => {
+        e.stopPropagation();
+        items.classList.toggle('select-hide');
+    });
+
+    options.forEach(option => {
+        option.addEventListener('click', () => {
+            const value = option.getAttribute('data-value');
+            const imgSrc = option.getAttribute('data-img');
+            const text = option.querySelector('span').textContent;
+
+            hiddenInput.value = value;
+            selectedImg.src = imgSrc;
+            selectedText.textContent = text;
+            
+            items.classList.add('select-hide');
+        });
+    });
+
+    document.addEventListener('click', () => {
+        items.classList.add('select-hide');
+    });
+});

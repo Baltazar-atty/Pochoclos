@@ -326,3 +326,61 @@ header {
   color: #64748b;
   margin-top: 4px;
 }
+
+/* Estilos para el Select Personalizado con Imágenes */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+  font-family: inherit;
+  user-select: none;
+}
+
+.select-selected {
+  background-color: #fff;
+  border: 1px solid #cbd5e1;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.select-items {
+  position: absolute;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  border-radius: 0 0 6px 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.select-hide {
+  display: none;
+}
+
+.select-option {
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.select-option:hover {
+  background-color: #f1f5f9;
+}
+
+.option-img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 4px;
+}
