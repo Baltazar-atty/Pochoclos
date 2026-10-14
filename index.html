@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pochoclos App</title>
+  <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
   <link rel="stylesheet" href="pochoclos.css">
 </head>
 <body>
@@ -24,7 +25,7 @@
   <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
 
-    <!-- 1. VISTA PÚBLICA (VISITA LIBRE) -->
+    <!-- 1. VISTA PÚBLICA -->
     <main id="vista-publica">
       
       <!-- METAS Y VENTAS -->
@@ -32,10 +33,10 @@
         <h2>📊 Pochoclos Vendidos Hoy</h2>
         <p style="font-size: 0.85rem; color: #64748b;">Meta diaria: 100 unidades</p>
         <div class="progress-bar-container">
-          <div id="barra-pochoclos" class="progress-bar">65%</div>
+          <div id="barra-pochoclos" class="progress-bar" style="width: 0%;">0%</div>
         </div>
         <p style="margin-top: 8px; font-weight: 600;">
-          🍿 Llevamos vendidas: <span id="total-vendidas" style="color: #e11d48;">65</span> unidades.
+          🍿 Llevamos vendidas: <span id="total-vendidas" style="color: #e11d48;">0</span> unidades.
         </p>
       </div>
 
@@ -49,12 +50,12 @@
         </div>
       </div>
 
-      <!-- SECCIÓN DE COMENTARIOS CENTRADA -->
+      <!-- SECCIÓN DE COMENTARIOS Y RESEÑAS -->
       <div class="card comments-container">
         <h2>💬 Déjanos tu Opinión</h2>
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 10px;">¿Qué tal estuvieron los pochoclos?</p>
 
-        <form onsubmit="guardarComentario(event)">
+        <form id="form-comentario" onsubmit="guardarComentario(event)">
           <!-- CALIFICACIÓN CON BOLSITAS DE POCHOCLO (1 AL 5) -->
           <div class="rating-popcorns" id="rating-container">
             <span class="popcorn-star active" onclick="seleccionarCalificacion(1)">🍿</span>
@@ -85,21 +86,15 @@
           <button type="submit" class="btn btn-primary btn-block">Enviar Opinión</button>
         </form>
 
-        <!-- COMENTARIOS PUBLICADOS -->
+        <!-- COMENTARIOS CARGADOS DESDE LA BASE DE DATOS (resenas.php) -->
         <div id="lista-comentarios" style="margin-top: 20px;">
-          <div class="comment-item">
-            <div class="comment-header">
-              <span class="comment-author">Martina Rossi</span>
-              <span>🍿🍿🍿🍿🍿</span>
-            </div>
-            <p style="font-size: 0.88rem; color: #334155;">¡Excelentes pochoclos, súper calentitos!</p>
-          </div>
+          <p>Cargando comentarios...</p>
         </div>
       </div>
 
     </main>
 
-    <!-- 2. VISTA ADMIN (CREAR EMPLEADOS) -->
+    <!-- 2. VISTA ADMIN -->
     <section id="vista-admin" class="hidden">
       <div class="card">
         <h2>👑 Panel Administrador</h2>
@@ -147,77 +142,96 @@
 
     <!-- 3. VISTA EMPLEADO / VENDEDOR -->
   <!-- 3. VISTA EMPLEADO / VENDEDOR -->
-<!-- 3. VISTA EMPLEADO / VENDEDOR -->
-    <section id="vista-empleado" class="hidden">
-      <div class="card">
-        <h2>🛒 Panel Vendedor</h2>
-        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
-          Seleccioná un producto de la botonera y la cantidad para registrar la venta.
-        </p>
+<section id="vista-empleado" class="hidden">
 
-        <form onsubmit="registrarVenta(event)">
+  <div class="card">
 
-          <!-- BOTONERA DE PRODUCTOS CON IMÁGENES -->
-          <div class="form-group">
-            <label>Selecciona el Producto:</label>
-            <div class="product-grid">
-              
-              <div class="product-btn" data-value="1" onclick="seleccionarProducto(1, this)">
-                <img src="imagenes/bolsa_media.jpg" alt="Bolsa">
-                <span>Bolsa</span>
-                <small>$1500</small>
-              </div>
+    <h2>🛒 Panel Vendedor</h2>
 
-              <div class="product-btn" data-value="2" onclick="seleccionarProducto(2, this)">
-                <img src="imagenes/caja.jpg" alt="Caja">
-                <span>Caja</span>
-                <small>$2500</small>
-              </div>
+    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
+      Seleccioná el producto y la cantidad para registrar una venta.
+    </p>
 
-              <div class="product-btn" data-value="3" onclick="seleccionarProducto(3, this)">
-                <img src="imagenes/maletin_spiderman.jpeg" alt="Spiderman">
-                <span>Spiderman</span>
-                <small>$4000</small>
-              </div>
+    <form onsubmit="registrarVenta(event)">
 
-              <div class="product-btn" data-value="4" onclick="seleccionarProducto(4, this)">
-                <img src="imagenes/maletin_cars.jpeg" alt="Cars">
-                <span>Cars</span>
-                <small>$4000</small>
-              </div>
+      <!-- PRODUCTO -->
+      <div class="form-group">
 
-              <div class="product-btn" data-value="5" onclick="seleccionarProducto(5, this)">
-                <img src="imagenes/maletin_dragon_ball.jpeg" alt="Dragon Ball">
-                <span>Dragon Ball</span>
-                <small>$4000</small>
-              </div>
+        <label for="venta-producto">
+          Producto:
+        </label>
 
-              <div class="product-btn active" data-value="6" onclick="seleccionarProducto(6, this)">
-                <img src="imagenes/maletin_barbie.jpeg" alt="Barbie">
-                <span>Barbie</span>
-                <small>$4000</small>
-              </div>
+        <select
+          id="venta-producto"
+          class="form-control"
+          required
+        >
 
-            </div>
+          <option value="">
+            Seleccionar producto
+          </option>
 
-            <!-- Input oculto que mantiene el ID del producto seleccionado para registrar la venta -->
-            <input type="hidden" id="venta-producto" value="6">
-          </div>
+          <option value="1">
+            Bolsa - $1500
+          </option>
 
-          <!-- CANTIDAD -->
-          <div class="form-group" style="margin-top: 15px;">
-            <label for="venta-cantidad">Cantidad:</label>
-            <input type="number" id="venta-cantidad" class="form-control" value="1" min="1" required>
-          </div>
+          <option value="2">
+            Caja - $2500
+          </option>
 
-          <!-- BOTÓN -->
-          <button type="submit" class="btn btn-primary btn-block">
-            ✅ Confirmar Venta
-          </button>
+          <option value="3">
+            Maletín Spiderman - $4000
+          </option>
 
-        </form>
+          <option value="4">
+            Maletín Cars - $4000
+          </option>
+
+          <option value="5">
+            Maletín Dragon Ball - $4000
+          </option>
+
+          <option value="6">
+            Maletín Barbie - $4000
+          </option>
+
+        </select>
+
       </div>
-    </section>
+
+
+      <!-- CANTIDAD -->
+      <div class="form-group">
+
+        <label for="venta-cantidad">
+          Cantidad:
+        </label>
+
+        <input
+          type="number"
+          id="venta-cantidad"
+          class="form-control"
+          value="1"
+          min="1"
+          required
+        >
+
+      </div>
+
+
+      <!-- BOTÓN -->
+      <button
+        type="submit"
+        class="btn btn-primary btn-block"
+      >
+        ✅ Confirmar Venta
+      </button>
+
+    </form>
+
+  </div>
+
+</section>
 
   </div>
 
@@ -247,6 +261,7 @@
     </div>
   </div>
 
+  <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
   <script src="pochoclosjs.js"></script>
 </body>
 </html>

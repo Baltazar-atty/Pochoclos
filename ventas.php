@@ -1,73 +1,67 @@
 <?php
 session_start();
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type");
 header('Content-Type: application/json; charset=utf-8');
 
 error_reporting(0);
-ini_set('display_errors', 0);
+ini_set('display_errors', '0');
 
 require_once 'conexion.php';
 
-$input = json_decode(file_get_contents('php://input'), true);
+$metodo = $_SERVER['REQUEST_METHOD'];
 
-$producto_id = isset($input['producto_id']) ? intval($input['producto_id']) : 0;
-$cantidad    = isset($input['cantidad']) ? intval($input['cantidad']) : 0;
+// 1. OBTENER VENTAS Y PRODUCTOS (GET)
+if ($metodo === 'GET') {
+    $totalVendidas = 50; // Valor demostrativo para mostrar 50% en la barra
 
-if ($producto_id <= 0 || $cantidad <= 0) {
+    if (isset($con) && $con) {
+        $resTotal = $con->query("SELECT SUM(cantidad) AS total FROM ventas");
+        if ($resTotal && $row = $resTotal->fetch_assoc()) {
+            if (!empty($row['total']) && (int)$row['total'] > 0) {
+                $totalVendidas = (int)$row['total'];
+            }
+        }
+
+        $resProductos = $con->query("SELECT id, tipo, subtipo, precio FROM productos ORDER BY id ASC");
+        $productos = [];
+        if ($resProductos) {
+            $productos = $resProductos->fetch_all(MYSQLI_ASSOC);
+        }
+    }
+
     echo json_encode([
-        'success' => false,
-        'message' => 'Seleccioná un producto y una cantidad válida.'
-    ]);
+        'success' => true,
+        'total_vendidas' => $totalVendidas,
+        'productos' => $productos ?? []
+    ], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
-// Obtener carrito asignado desde la sesión o usar el #1 por defecto
-$carrito_id = $_SESSION['carrito_id'] ?? 1;
+// 2. REGISTRAR NUEVA VENTA (POST)
+if ($metodo === 'POST') {
+    $input = json_decode(file_get_contents('php://input'), true);
 
-// 1. Obtener datos del producto
-$stmtProd = $con->prepare("SELECT tipo, subtipo, precio FROM productos WHERE id = ?");
-$stmtProd->bind_param("i", $producto_id);
-$stmtProd->execute();
-$resProd = $stmtProd->get_result();
+    $producto_id = isset($input['producto_id']) ? intval($input['producto_id']) : 0;
+    $cantidad    = isset($input['cantidad']) ? intval($input['cantidad']) : 1;
+    $latitud     = isset($input['latitud']) ? floatval($input['latitud']) : null;
+    $longitud    = isset($input['longitud']) ? floatval($input['longitud']) : null;
+    $carrito_id  = $_SESSION['carrito_id'] ?? 1;
 
-if ($producto = $resProd->fetch_assoc()) {
-    
-    // 2. Insertar la venta
-    $stmtVenta = $con->prepare("INSERT INTO ventas (carrito_id, producto_id, cantidad, fecha_venta) VALUES (?, ?, ?, NOW())");
-    $stmtVenta->bind_param("iii", $carrito_id, $producto_id, $cantidad);
-
-    if ($stmtVenta->execute()) {
-
-        // Actualizar métricas de promo
-        $con->query("UPDATE configuracion_promo SET ventas_hoy = ventas_hoy + $cantidad, total_ventas_historicas = total_ventas_historicas + $cantidad WHERE id = 1");
-
-        $nombreProducto = ucfirst($producto['tipo']);
-        if (!empty($producto['subtipo'])) {
-            $nombreProducto .= ' (' . $producto['subtipo'] . ')';
-        }
-
-        echo json_encode([
-            'success'    => true,
-            'message'    => 'Venta registrada con éxito.',
-            'producto'   => $nombreProducto,
-            'cantidad'   => $cantidad,
-            'carrito_id' => $carrito_id
-        ]);
-
-    } else {
-        echo json_encode([
-            'success' => false,
-            'message' => 'Error al guardar la venta: ' . $con->error
-        ]);
+    if ($producto_id <= 0 || $cantidad <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Producto o cantidad inválida.']);
+        exit;
     }
 
-    $stmtVenta->close();
+    $stmt = $con->prepare("INSERT INTO ventas (carrito_id, producto_id, cantidad, latitud, longitud, fecha_venta) VALUES (?, ?, ?, ?, ?, NOW())");
+    $stmt->bind_param("iiidd", $carrito_id, $producto_id, $cantidad, $latitud, $longitud);
 
-} else {
-    echo json_encode([
-        'success' => false,
-        'message' => 'El producto seleccionado no existe.'
-    ]);
+    if ($stmt->execute()) {
+        echo json_encode(['success' => true, 'message' => '✅ Venta registrada con éxito.']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'Error al guardar venta: ' . $con->error]);
+    }
+    $stmt->close();
+    exit;
 }
-
-$stmtProd->close();
 ?>

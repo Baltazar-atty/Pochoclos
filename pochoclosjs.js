@@ -1,12 +1,373 @@
-// ======================================================
-// ESTADO GLOBAL
-// ======================================================
 let usuarioSesion = null;
-let calificacionSeleccionada = 5;
+let calificacionActual = 5;
+let productosDisponibles = [];
+let maletinesDisponibles = [];
 
-// ======================================================
-// EFECTO VISUAL: POCHOCLOS
-// ======================================================
+// 1. CARGAR RESEÑAS / COMENTARIOS DESDE LA BD
+async function cargarComentarios() {
+  const lista = document.getElementById('lista-comentarios');
+  if (!lista) return;
+
+  try {
+    const respuesta = await fetch('resenas.php');
+    const datos = await respuesta.json();
+
+    if (!datos.success) {
+      lista.innerHTML = '<p style="color: #64748b;">Todavía no hay comentarios publicados.</p>';
+      return;
+    }
+
+    lista.innerHTML = '';
+
+    if (!datos.resenas || datos.resenas.length === 0) {
+      lista.innerHTML = '<p style="color: #64748b;">Todavía no hay comentarios. ¡Sé el primero en opinar!</p>';
+      return;
+    }
+
+    datos.resenas.forEach((resena) => {
+      const tarjeta = document.createElement('div');
+      tarjeta.className = 'comment-item';
+
+      const puntuacion = Math.max(1, Math.min(5, Number(resena.puntuacion) || 5));
+      const estrellas = '🍿'.repeat(puntuacion);
+
+      tarjeta.innerHTML = `
+        <div class="comment-header">
+          <span class="comment-author">${resena.nombre_cliente}</span>
+          <span>${estrellas}</span>
+        </div>
+        <p style="font-size: 0.88rem; color: #334155; margin-top: 4px;">${resena.comentario}</p>
+      `;
+
+      lista.appendChild(tarjeta);
+    });
+  } catch (error) {
+    console.error('Error al cargar reseñas:', error);
+    lista.innerHTML = '<p style="color: #ef4444;">Error de conexión con las reseñas.</p>';
+  }
+}
+
+// 2. GUARDAR RESEÑA EN LA BD
+async function guardarComentario(evento) {
+  evento.preventDefault();
+
+  const nombre = document.getElementById('com-nombre').value.trim();
+  const apellido = document.getElementById('com-apellido').value.trim();
+  const comentario = document.getElementById('com-texto').value.trim();
+
+  if (!nombre || !apellido || !comentario) {
+    alert('Por favor completá tu nombre, apellido y opinión.');
+    return;
+  }
+
+  try {
+    const respuesta = await fetch('resenas.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: nombre,
+        apellido: apellido,
+        comentario: comentario,
+        puntuacion: calificacionActual
+      })
+    });
+
+    const datos = await respuesta.json();
+
+    if (datos.success) {
+      alert('✅ ' + datos.message);
+      document.getElementById('form-comentario').reset();
+      seleccionarCalificacion(5);
+      await cargarComentarios();
+    } else {
+      alert('⚠️ ' + datos.message);
+    }
+  } catch (error) {
+    console.error('Error al guardar comentario:', error);
+    alert('❌ Error al conectar con el servidor.');
+  }
+}
+
+function seleccionarCalificacion(puntuacion) {
+  calificacionActual = puntuacion;
+  const estrellas = document.querySelectorAll('#rating-container .popcorn-star');
+  estrellas.forEach((estrella, indice) => {
+    if (indice < puntuacion) {
+      estrella.classList.add('active');
+    } else {
+      estrella.classList.remove('active');
+    }
+  });
+}
+
+// 3. CARGAR DATOS DE VENTAS Y PRODUCTOS
+async function cargarDatosVentas() {
+  try {
+    const res = await fetch('ventas.php');
+    const data = await res.json();
+
+    if (data.success) {
+      productosDisponibles = data.productos || [];
+      const totalMostrar = (data.total_vendidas > 0) ? data.total_vendidas : 50;
+      actualizarBarraPublica(totalMostrar);
+
+      if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
+        renderizarBotoneraProductos();
+      }
+    } else {
+      actualizarBarraPublica(50);
+    }
+  } catch (err) {
+    console.error('Error al cargar ventas:', err);
+    actualizarBarraPublica(50);
+  }
+}
+
+function actualizarBarraPublica(totalVendidas) {
+  const meta = 100;
+  const porcentaje = Math.min(Math.round((totalVendidas / meta) * 100), 100);
+
+  const elTotal = document.getElementById('total-vendidas');
+  const elBarra = document.getElementById('barra-pochoclos');
+
+  if (elTotal) elTotal.textContent = totalVendidas;
+  if (elBarra) {
+    elBarra.style.width = `${porcentaje}%`;
+    elBarra.textContent = `${porcentaje}%`;
+  }
+}
+
+function renderizarBotoneraProductos() {
+  const grid = document.getElementById('grid-productos');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  const productosSimples = productosDisponibles.filter(p => p.tipo !== 'maletin');
+  maletinesDisponibles = productosDisponibles.filter(p => p.tipo === 'maletin');
+
+  productosSimples.forEach(prod => {
+    grid.innerHTML += `
+      <div style="border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; text-align: center; background: #fff;">
+        <img src="img/${prod.tipo}.png" alt="${prod.tipo}" style="width: 80px; height: 80px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none';">
+        <div style="font-weight: bold; margin-top: 5px;">${prod.tipo.toUpperCase()}</div>
+        <div style="color: #e11d48; font-weight: 600;">$${prod.precio}</div>
+        <button class="btn btn-primary btn-block" style="margin-top: 8px;" onclick="registrarVentaDirecta(${prod.id})">🛒 Vender</button>
+      </div>
+    `;
+  });
+
+  if (maletinesDisponibles.length > 0) {
+    grid.innerHTML += `
+      <div style="border: 1px solid #cbd5e1; padding: 15px; border-radius: 8px; text-align: center; background: #fff;">
+        <img src="img/spiderman.png" alt="Maletín" style="width: 80px; height: 80px; object-fit: contain;" onerror="this.onerror=null; this.style.display='none';">
+        <div style="font-weight: bold; margin-top: 5px;">MALETINES</div>
+        <div style="color: #e11d48; font-weight: 600;">$${maletinesDisponibles[0].precio}</div>
+        <button class="btn btn-primary btn-block" style="margin-top: 8px;" onclick="abrirModalMaletin()">🎒 Elegir Versión</button>
+      </div>
+    `;
+  }
+}
+
+// CORREGIDO: Sintaxis limpia para opciones del select
+function abrirModalMaletin() {
+  const select = document.getElementById('select-subtipo-maletin');
+  if (!select) return;
+  select.innerHTML = '';
+
+  maletinesDisponibles.forEach(m => {
+    select.innerHTML += `<option value="${m.id}">${m.subtipo} - $${m.precio}</option>`;
+  });
+
+  document.getElementById('modal-maletin').classList.remove('hidden');
+}
+
+function cerrarModalMaletin() {
+  document.getElementById('modal-maletin').classList.add('hidden');
+}
+
+async function registrarVentaDirecta(productoId) {
+  await enviarVentaBD(productoId, 1);
+}
+
+async function confirmarVentaMaletin() {
+  const productoId = document.getElementById('select-subtipo-maletin').value;
+  await enviarVentaBD(productoId, 1);
+  cerrarModalMaletin();
+}
+
+async function enviarVentaBD(productoId, cantidad) {
+  try {
+    const res = await fetch('ventas.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ producto_id: productoId, cantidad: cantidad, latitud: -36.53, longitud: -56.69 })
+    });
+
+    const data = await res.json();
+    alert(data.message);
+
+    if (data.success) {
+      cargarDatosVentas();
+    }
+  } catch (err) {
+    alert('Error al registrar la venta.');
+  }
+}
+
+// 4. MODAL Y LOGIN
+function abrirModalLogin() {
+  document.getElementById('modal-login').classList.remove('hidden');
+}
+
+function cerrarModalLogin() {
+  document.getElementById('modal-login').classList.add('hidden');
+}
+
+async function procesarLogin(e) {
+  e.preventDefault();
+
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+
+  try {
+    const res = await fetch('login.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      usuarioSesion = data;
+      cerrarModalLogin();
+      activarPanel(data.rol, data.nombre);
+    } else {
+      alert(data.message || 'Credenciales incorrectas.');
+    }
+  } catch (err) {
+    alert('Error al conectar con el servidor.');
+  }
+}
+
+function activarPanel(rol, nombre) {
+  document.getElementById('vista-publica').classList.add('hidden');
+  document.getElementById('btn-abrir-login').classList.add('hidden');
+
+  const labelUser = document.getElementById('label-usuario');
+  const btnCerrar = document.getElementById('btn-cerrar-sesion');
+  labelUser.classList.remove('hidden');
+  btnCerrar.classList.remove('hidden');
+
+  if (rol === 'admin') {
+    labelUser.textContent = `👑 Admin: ${nombre}`;
+    document.getElementById('vista-admin').classList.remove('hidden');
+    renderizarEmpleados();
+  } else {
+    labelUser.textContent = `🛒 Vendedor: ${nombre}`;
+    document.getElementById('vista-empleado').classList.remove('hidden');
+    cargarDatosVentas();
+  }
+}
+
+function cerrarSesion() {
+  usuarioSesion = null;
+  document.getElementById('vista-admin').classList.add('hidden');
+  document.getElementById('vista-empleado').classList.add('hidden');
+  document.getElementById('label-usuario').classList.add('hidden');
+  document.getElementById('btn-cerrar-sesion').classList.add('hidden');
+
+  document.getElementById('vista-publica').classList.remove('hidden');
+  document.getElementById('btn-abrir-login').classList.remove('hidden');
+}
+
+// 5. GESTIÓN DE EMPLEADOS (ADMIN)
+async function renderizarEmpleados() {
+  const lista = document.getElementById('tabla-empleados');
+  if (!lista) return;
+
+  try {
+    const res = await fetch('empleados.php');
+    const data = await res.json();
+
+    if (data.success) {
+      lista.innerHTML = '';
+      if (data.empleados.length === 0) {
+        lista.innerHTML = '<li style="color: #64748b;">No hay empleados registrados.</li>';
+        return;
+      }
+
+      data.empleados.forEach(emp => {
+        lista.innerHTML += `
+          <li>
+            <span>
+              <strong>${emp.nombre} ${emp.apellido}</strong> - ${emp.email}<br>
+              <small style="color: #64748b;">Carrito Asignado ID: ${emp.carrito_id || 'Sin asignación'}</small>
+            </span>
+            <button class="btn btn-danger" onclick="eliminarEmpleado(${emp.id})">Borrar</button>
+          </li>
+        `;
+      });
+    }
+  } catch (err) {
+    console.error('Error al cargar empleados:', err);
+  }
+}
+
+async function crearEmpleado(e) {
+  e.preventDefault();
+
+  const nombre = document.getElementById('emp-nombre').value.trim();
+  const apellido = document.getElementById('emp-apellido').value.trim();
+  const email = document.getElementById('emp-email').value.trim();
+  const password = document.getElementById('emp-password').value.trim();
+  const carrito_id = document.getElementById('emp-carrito').value;
+
+  try {
+    const res = await fetch('empleados.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, apellido, email, password, carrito_id })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ " + data.message);
+      e.target.reset();
+      renderizarEmpleados();
+    } else {
+      alert("⚠️ " + data.message);
+    }
+  } catch (err) {
+    alert("❌ Error al conectar con el servidor.");
+  }
+}
+
+async function eliminarEmpleado(id) {
+  if (!confirm("¿Seguro que querés eliminar la cuenta de este empleado?")) return;
+
+  try {
+    const res = await fetch('empleados.php', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ " + data.message);
+      renderizarEmpleados();
+    } else {
+      alert("⚠️ " + data.message);
+    }
+  } catch (err) {
+    alert("❌ Error al procesar la eliminación.");
+  }
+}
+
+// EFECTO POCHOCLOS VOLADORES
 function explotarPochoclos(e) {
   const rect = e.target.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
@@ -21,8 +382,8 @@ function explotarPochoclos(e) {
     const dy = -(Math.random() * 150 + 50) + 'px';
     const rot = (Math.random() - 0.5) * 360 + 'deg';
 
-    p.style.left = `${x}px`;
-    p.style.top = `${y}px`;
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
     p.style.setProperty('--dx', dx);
     p.style.setProperty('--dy', dy);
     p.style.setProperty('--rot', rot);
@@ -32,336 +393,7 @@ function explotarPochoclos(e) {
   }
 }
 
-// ======================================================
-// GEOLOCALIZACIÓN
-// ======================================================
-function obtenerUbicacion() {
-  return new Promise((resolve) => {
-    if (!navigator.geolocation) {
-      alert("El dispositivo no permite obtener la ubicación.");
-      resolve({ latitud: null, longitud: null });
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (posicion) => {
-        const lat = posicion.coords.latitude;
-        const lng = posicion.coords.longitude;
-
-        const inputLat = document.getElementById("latitud");
-        const inputLng = document.getElementById("longitud");
-
-        if (inputLat) inputLat.value = lat;
-        if (inputLng) inputLng.value = lng;
-
-        resolve({ latitud: lat, longitud: lng });
-      },
-      (error) => {
-        console.warn("No se pudo obtener la ubicación:", error.message);
-        resolve({ latitud: null, longitud: null });
-      },
-      { timeout: 5000, enableHighAccuracy: true }
-    );
-  });
-}
-
-// ======================================================
-// MODAL & AUTENTICACIÓN (LOGIN / LOGOUT)
-// ======================================================
-function abrirModalLogin() {
-  document.getElementById('modal-login')?.classList.remove('hidden');
-}
-
-function cerrarModalLogin() {
-  document.getElementById('modal-login')?.classList.add('hidden');
-}
-
-async function procesarLogin(e) {
-  e.preventDefault();
-
-  const emailEl = document.getElementById('login-email');
-  const passwordEl = document.getElementById('login-password');
-
-  if (!emailEl || !passwordEl) return;
-
-  const email = emailEl.value.trim();
-  const password = passwordEl.value.trim();
-
-  try {
-    const res = await fetch('login.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    const texto = await res.text();
-    let data;
-
-    try {
-      data = JSON.parse(texto);
-    } catch {
-      alert('❌ Respuesta inválida del servidor (no es JSON).');
-      return;
-    }
-
-    if (data.success) {
-      usuarioSesion = data;
-      cerrarModalLogin();
-      activarPanel(data.rol, data.nombre);
-    } else {
-      alert(data.message || 'Credenciales incorrectas.');
-    }
-  } catch (err) {
-    alert(`❌ Error al conectar con el servidor: ${err.message}`);
-  }
-}
-
-function activarPanel(rol, nombre) {
-  document.getElementById('vista-publica')?.classList.add('hidden');
-  document.getElementById('btn-abrir-login')?.classList.add('hidden');
-
-  const labelUsuario = document.getElementById('label-usuario');
-  if (labelUsuario) {
-    labelUsuario.classList.remove('hidden');
-    labelUsuario.textContent = rol === 'admin' ? `👑 Admin: ${nombre}` : `🛒 ${nombre}`;
-  }
-
-  document.getElementById('btn-cerrar-sesion')?.classList.remove('hidden');
-
-  const vistaAdmin = document.getElementById('vista-admin');
-  const vistaEmpleado = document.getElementById('vista-empleado');
-
-  if (rol === 'admin') {
-    vistaEmpleado?.classList.add('hidden');
-    vistaAdmin?.classList.remove('hidden');
-    renderizarEmpleados();
-  } else {
-    vistaAdmin?.classList.add('hidden');
-    vistaEmpleado?.classList.remove('hidden');
-  }
-}
-
-function cerrarSesion() {
-  usuarioSesion = null;
-
-  const ocultar = ['vista-admin', 'vista-empleado', 'label-usuario', 'btn-cerrar-sesion'];
-  const mostrar = ['vista-publica', 'btn-abrir-login'];
-
-  ocultar.forEach(id => document.getElementById(id)?.classList.add('hidden'));
-  mostrar.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
-}
-
-// ======================================================
-// GESTIÓN DE EMPLEADOS
-// ======================================================
-async function renderizarEmpleados() {
-  const lista = document.getElementById('tabla-empleados');
-  if (!lista) return;
-
-  lista.innerHTML = '<li>Cargando empleados...</li>';
-
-  try {
-    const res = await fetch('empleados.php');
-    const data = await res.json();
-
-    if (data.success) {
-      if (!data.empleados || data.empleados.length === 0) {
-        lista.innerHTML = '<li style="color: #64748b;">No hay empleados registrados.</li>';
-        return;
-      }
-
-      lista.innerHTML = data.empleados.map(emp => `
-        <li>
-          <span>
-            <strong>${emp.nombre} ${emp.apellido}</strong> - ${emp.email}<br>
-            <small style="color: #64748b;">
-              Carrito Asignado ID: ${emp.carrito_id || 'Sin asignación'}
-            </small>
-          </span>
-          <button class="btn btn-danger" onclick="eliminarEmpleado(${emp.id})">Borrar</button>
-        </li>
-      `).join('');
-    } else {
-      lista.innerHTML = '<li style="color: #ef4444;">Error al obtener empleados.</li>';
-    }
-  } catch {
-    lista.innerHTML = '<li style="color: #ef4444;">Error de conexión con el servidor.</li>';
-  }
-}
-
-async function crearEmpleado(e) {
-  e.preventDefault();
-
-  const nombre = document.getElementById('emp-nombre')?.value.trim();
-  const apellido = document.getElementById('emp-apellido')?.value.trim();
-  const email = document.getElementById('emp-email')?.value.trim();
-  const password = document.getElementById('emp-password')?.value.trim();
-  const carrito_id = document.getElementById('emp-carrito')?.value;
-
-  try {
-    const res = await fetch('empleados.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, apellido, email, password, carrito_id })
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      alert(`✅ ${data.message}`);
-      e.target.reset();
-      renderizarEmpleados();
-    } else {
-      alert(`⚠️ ${data.message}`);
-    }
-  } catch {
-    alert('❌ Error al conectar con el servidor.');
-  }
-}
-
-async function eliminarEmpleado(id) {
-  if (!confirm('¿Seguro que querés eliminar la cuenta de este empleado?')) return;
-
-  try {
-    const res = await fetch('empleados.php', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id })
-    });
-
-    const data = await res.json();
-
-    if (data.success) {
-      alert(`✅ ${data.message}`);
-      renderizarEmpleados();
-    } else {
-      alert(`⚠️ ${data.message}`);
-    }
-  } catch {
-    alert('❌ Error al procesar la eliminación.');
-  }
-}
-
-// ======================================================
-// SISTEMA DE VENTAS CON COORDENADAS
-// ======================================================
-async function registrarVenta(e) {
-  e.preventDefault();
-
-  const productoElement = document.getElementById('venta-producto');
-  const cantidadElement = document.getElementById('venta-cantidad');
-
-  if (!productoElement || !cantidadElement) return;
-
-  const producto_id = parseInt(productoElement.value, 10);
-  const cantidad = parseInt(cantidadElement.value, 10);
-
-  if (!producto_id || producto_id <= 0) {
-    alert('⚠️ Seleccioná un producto.');
-    return;
-  }
-
-  if (!cantidad || cantidad <= 0) {
-    alert('⚠️ La cantidad debe ser mayor a 0.');
-    return;
-  }
-
-  // Intentar obtener las coordenadas existentes en los inputs o capturarlas del GPS
-  let latitud = document.getElementById('latitud')?.value || null;
-  let longitud = document.getElementById('longitud')?.value || null;
-
-  if (!latitud || !longitud) {
-    const coords = await obtenerUbicacion();
-    latitud = coords.latitud;
-    longitud = coords.longitud;
-  }
-
-  try {
-    const res = await fetch('ventas.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        producto_id,
-        cantidad,
-        latitud,
-        longitud
-      })
-    });
-
-    const texto = await res.text();
-    let data;
-
-    try {
-      data = JSON.parse(texto);
-    } catch {
-      alert('❌ ventas.php no devolvió JSON válido.');
-      return;
-    }
-
-    if (data.success) {
-      alert(`✅ ${data.message}\n\nProducto: ${data.producto || ''}\nCantidad: ${data.cantidad || cantidad}\nCarrito: #${data.carrito_id || ''}`);
-      e.target.reset();
-
-      // Limpiar inputs de coordenadas si existen
-      if (document.getElementById('latitud')) document.getElementById('latitud').value = '';
-      if (document.getElementById('longitud')) document.getElementById('longitud').value = '';
-    } else {
-      alert(`⚠️ ${data.message || 'No se pudo registrar la venta.'}`);
-    }
-  } catch (err) {
-    alert(`❌ Error de conexión con ventas.php.\n\n${err.message}`);
-  }
-}
-
-// ======================================================
-// CALIFICACIÓN & COMENTARIOS
-// ======================================================
-function seleccionarCalificacion(valor) {
-  calificacionSeleccionada = valor;
-  const bolsitas = document.querySelectorAll('#rating-container .popcorn-star');
-
-  bolsitas.forEach((b, index) => {
-    b.classList.toggle('active', index < valor);
-  });
-}
-
-function guardarComentario(e) {
-  e.preventDefault();
-
-  const nombre = document.getElementById('com-nombre')?.value || '';
-  const apellido = document.getElementById('com-apellido')?.value || '';
-  const texto = document.getElementById('com-texto')?.value || '';
-  const bolsitasStr = '🍿'.repeat(calificacionSeleccionada);
-  const lista = document.getElementById('lista-comentarios');
-
-  if (!lista) return;
-
-  const nuevoComentario = `
-    <div class="comment-item">
-      <div class="comment-header">
-        <span class="comment-author">${nombre} ${apellido}</span>
-        <span>${bolsitasStr}</span>
-      </div>
-      <p style="font-size: 0.88rem; color: #334155;">${texto}</p>
-    </div>
-  `;
-
-  lista.insertAdjacentHTML('afterbegin', nuevoComentario);
-  e.target.reset();
+// INICIALIZACIÓN
+document.addEventListener('DOMContentLoaded', () => {
   seleccionarCalificacion(5);
-}
-// ======================================================
-// SELECCIÓN DE PRODUCTO EN BOTONERA
-// ======================================================
-function seleccionarProducto(id, elemento) {
-  // Actualizar el valor del input oculto que lee registrarVenta()
-  const inputProducto = document.getElementById('venta-producto');
-  if (inputProducto) {
-    inputProducto.value = id;
-  }
-
-  // Quitar la clase 'active' de todos los botones y ponérsela al presionado
-  const botones = document.querySelectorAll('.product-btn');
-  botones.forEach(btn => btn.classList.remove('active'));
-  elemento.classList.add('active');
 }
