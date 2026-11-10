@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pochoclos App</title>
   <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
-  <link rel="stylesheet" href="pochoclos.css?v=20261110_04">
+  <link rel="stylesheet" href="pochoclos.css?v=20261110_15">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
     </div>
 
     <div class="nav-actions">
-      <button id="btn-abrir-login" class="btn-login" onclick="abrirModalLogin()">🔑 Iniciar Sesión</button>
+      <button id="btn-abrir-login" class="btn-login" onclick="abrirModalLogin()">Iniciar Sesión</button>
       <span id="label-usuario" class="hidden" style="font-weight: 600; font-size: 0.9rem;"></span>
       <button id="btn-cerrar-sesion" class="btn btn-danger hidden" onclick="cerrarSesion()">Salir</button>
     </div>
@@ -30,7 +30,7 @@
       
       <!-- METAS Y VENTAS -->
       <div class="card">
-        <h2>📊 Pochoclos Vendidos Hoy</h2>
+        <h2 class="chart-heading"><span class="chart-icon" aria-hidden="true"><span></span><span></span><span></span></span>Pochoclos Vendidos Hoy</h2>
         <p style="font-size: 0.85rem; color: #64748b;">Meta diaria: 100 unidades</p>
         <div class="progress-bar-container">
           <div id="barra-pochoclos" class="progress-bar" style="width: 0%;">0%</div>
@@ -56,10 +56,10 @@
       <!-- UBICACIÓN DEL CARRITO -->
       <div class="card">
         <h2>📍 Ubicación del Carrito</h2>
-        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px;">
-          <h3 style="color: #0f172a; font-size: 1rem; margin-bottom: 4px;">🛒 Carrito #1 - Plaza Central</h3>
-          <p style="font-size: 0.9rem;"><strong>Ubicación:</strong> Av. San Martín y Calle 3</p>
-          <p style="font-size: 0.9rem; color: #16a34a; font-weight: bold; margin-top: 4px;">🟢 Abierto ahora</p>
+        <div class="location-summary">
+          <h3 class="location-title">Plaza Central</h3>
+          <p class="location-address">Av. San Martín y Calle 3</p>
+          <p class="location-status"><span class="status-dot" aria-hidden="true"></span>Abierto ahora</p>
         </div>
       </div>
 
@@ -136,7 +136,7 @@
           </div>
 
           <div class="form-group">
-            <label>Asignar a Carrito:</label>
+            <label for="emp-carrito">Asignar a Carrito:</label>
             <select id="emp-carrito" class="form-control">
               <option value="1">Carrito #1 - Plaza Central</option>
               <option value="2">Carrito #2 - Playa / Peatonal</option>
@@ -209,6 +209,6 @@
   </div>
 
   <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
-  <script src="pochoclosjs.js?v=20261110_04"></script>
+  <script src="pochoclosjs.js?v=20261110_07"></script>
 </body>
 </html>
