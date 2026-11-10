@@ -158,21 +158,19 @@
       <div class="card">
         <h2>🛒 Panel Vendedor</h2>
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
-          Seleccioná un producto de la botonera y la cantidad para registrar la venta.
+          Seleccioná uno o varios productos. Después indicá la cantidad de cada uno.
         </p>
 
         <form onsubmit="registrarVenta(event)">
           <div class="form-group">
-            <label>Seleccioná el producto:</label>
+            <label>Seleccioná los productos:</label>
             <div id="grid-productos" class="product-grid">
               <!-- Carga dinámicamente desde la base de datos -->
             </div>
-            <input type="hidden" id="venta-producto" value="">
           </div>
 
-          <div class="form-group" style="margin-top: 15px;">
-            <label for="venta-cantidad">Cantidad:</label>
-            <input type="number" id="venta-cantidad" class="form-control" value="1" min="1" required>
+          <div id="productos-seleccionados" class="selected-products">
+            <p class="empty-selection">Todavía no seleccionaste productos.</p>
           </div>
 
           <button type="submit" class="btn btn-primary btn-block">✅ Confirmar Venta</button>

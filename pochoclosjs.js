@@ -136,6 +136,9 @@ function actualizarBarraPublica(totalVendidas) {
   }
 }
 
+// Productos seleccionados para la venta: { productoId: cantidad }
+let productosSeleccionados = {};
+
 function renderizarBotoneraProductos() {
   const grid = document.getElementById('grid-productos');
   if (!grid) return;
@@ -144,14 +147,20 @@ function renderizarBotoneraProductos() {
   productosDisponibles.forEach(prod => {
     const nombre = prod.tipo === 'maletin' ? `Maletín ${prod.subtipo}` : prod.tipo;
     const imagen = obtenerImagenProducto(prod);
-    grid.innerHTML += `
-      <div class="product-btn" data-value="${prod.id}" onclick="seleccionarProducto(${prod.id}, this)">
-        <img src="${imagen}" alt="${nombre}" onerror="this.onerror=null; this.style.display='none';">
-        <span>${nombre}</span>
-        <small>$${prod.precio}</small>
-      </div>
+    const boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'product-btn' + (productosSeleccionados[prod.id] ? ' active' : '');
+    boton.dataset.value = prod.id;
+    boton.innerHTML = `
+      <img src="${imagen}" alt="${nombre}" onerror="this.onerror=null; this.style.display='none';">
+      <span>${nombre}</span>
+      <small>$${prod.precio}</small>
     `;
+    boton.addEventListener('click', () => seleccionarProducto(Number(prod.id)));
+    grid.appendChild(boton);
   });
+
+  renderizarCantidadesProductos();
 }
 
 function obtenerImagenProducto(producto) {
@@ -163,48 +172,103 @@ function obtenerImagenProducto(producto) {
   return `imagenes/maletin_${nombreArchivo}.jpeg`;
 }
 
-function seleccionarProducto(id, elemento) {
-  const inputProducto = document.getElementById('venta-producto');
-  if (inputProducto) inputProducto.value = id;
+function seleccionarProducto(id) {
+  if (productosSeleccionados[id]) {
+    delete productosSeleccionados[id];
+  } else {
+    productosSeleccionados[id] = 1;
+  }
 
-  document.querySelectorAll('#grid-productos .product-btn').forEach(boton => {
-    boton.classList.toggle('active', boton === elemento);
+  const boton = document.querySelector(`#grid-productos .product-btn[data-value="${id}"]`);
+  if (boton) boton.classList.toggle('active', Boolean(productosSeleccionados[id]));
+  renderizarCantidadesProductos();
+}
+
+function renderizarCantidadesProductos() {
+  const contenedor = document.getElementById('productos-seleccionados');
+  if (!contenedor) return;
+
+  const seleccionados = productosDisponibles.filter(prod => productosSeleccionados[prod.id]);
+  if (seleccionados.length === 0) {
+    contenedor.innerHTML = '<p class="empty-selection">Todavía no seleccionaste productos.</p>';
+    return;
+  }
+
+  contenedor.innerHTML = '<h3 class="selected-products-title">Cantidades por producto</h3>';
+  seleccionados.forEach(prod => {
+    const nombre = prod.tipo === 'maletin' ? `Maletín ${prod.subtipo}` : prod.tipo;
+    const grupo = document.createElement('div');
+    grupo.className = 'selected-product-row';
+    grupo.innerHTML = `
+      <div class="selected-product-info">
+        <strong>${nombre}</strong>
+        <small>$${Number(prod.precio).toLocaleString('es-AR')} por unidad</small>
+      </div>
+      <label for="cantidad-producto-${prod.id}">Cantidad</label>
+      <input
+        type="number"
+        id="cantidad-producto-${prod.id}"
+        class="form-control selected-quantity"
+        min="1"
+        step="1"
+        value="${productosSeleccionados[prod.id]}"
+        required
+        onchange="actualizarCantidadProducto(${prod.id}, this.value)"
+        oninput="actualizarCantidadProducto(${prod.id}, this.value)"
+      >
+    `;
+    contenedor.appendChild(grupo);
   });
+}
+
+function actualizarCantidadProducto(id, valor) {
+  productosSeleccionados[id] = valor;
 }
 
 async function registrarVenta(evento) {
   evento.preventDefault();
 
-  const productoId = document.getElementById('venta-producto').value;
-  const cantidad = Number(document.getElementById('venta-cantidad').value);
-  if (!productoId) {
-    alert('Seleccioná un producto antes de confirmar la venta.');
-    return;
-  }
-  if (!Number.isInteger(cantidad) || cantidad < 1) {
-    alert('Ingresá una cantidad válida.');
+  const items = Object.entries(productosSeleccionados).map(([producto_id, cantidad]) => ({
+    producto_id: Number(producto_id),
+    cantidad: Number(cantidad)
+  }));
+
+  if (items.length === 0) {
+    alert('Seleccioná al menos un producto antes de confirmar la venta.');
     return;
   }
 
-  await enviarVentaBD(productoId, cantidad);
+  if (items.some(item => !Number.isInteger(item.cantidad) || item.cantidad < 1)) {
+    alert('Revisá las cantidades: todos los productos deben tener una cantidad válida.');
+    return;
+  }
+
+  await enviarVentaBD(items);
 }
 
-async function enviarVentaBD(productoId, cantidad) {
+async function enviarVentaBD(items) {
   try {
     const res = await fetch('ventas.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ producto_id: productoId, cantidad: cantidad, latitud: -36.53, longitud: -56.69 })
+      body: JSON.stringify({
+        items,
+        latitud: -36.53,
+        longitud: -56.69
+      })
     });
 
     const data = await res.json();
     alert(data.message);
 
     if (data.success) {
-      cargarDatosVentas();
+      productosSeleccionados = {};
+      renderizarBotoneraProductos();
+      await cargarDatosVentas();
     }
   } catch (err) {
-    alert('Error al registrar la venta.');
+    console.error('Error al registrar la venta:', err);
+    alert('Error al registrar la venta. Verificá la conexión con el servidor.');
   }
 }
 
