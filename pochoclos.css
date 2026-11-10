@@ -117,6 +117,38 @@ main, section {
   color: var(--red-pop);
 }
 
+.progress-bar-container {
+  width: 100%;
+  max-width: 420px;
+  height: 26px;
+  background: linear-gradient(180deg, #fff1f5, #ffe6ef);
+  border: 3px solid var(--yellow-pop);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 10px auto 12px;
+  box-shadow: inset 0 2px 10px rgba(255, 42, 95, 0.08);
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0;
+  min-width: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  background: linear-gradient(90deg, #ff5d8f 0%, var(--red-pop) 45%, #ff9ab1 100%);
+  border-radius: 999px;
+  color: var(--white);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  transition: width 0.5s ease;
+  box-shadow: inset 0 0 16px rgba(255,255,255,0.18), 0 0 18px rgba(255, 42, 95, 0.18);
+  white-space: nowrap;
+}
+
 /* GRÁFICO DE BARRAS DE VENTAS DE 4 DÍAS */
 .chart-container {
   display: flex;

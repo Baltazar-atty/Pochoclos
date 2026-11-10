@@ -107,18 +107,18 @@ async function cargarDatosVentas() {
 
     if (data.success) {
       productosDisponibles = data.productos || [];
-      const totalMostrar = (data.total_vendidas > 0) ? data.total_vendidas : 50;
+      const totalMostrar = Number(data.total_vendidas) || 0;
       actualizarBarraPublica(totalMostrar);
 
       if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
         renderizarBotoneraProductos();
       }
     } else {
-      actualizarBarraPublica(50);
+      actualizarBarraPublica(0);
     }
   } catch (err) {
     console.error('Error al cargar ventas:', err);
-    actualizarBarraPublica(50);
+    actualizarBarraPublica(0);
   }
 }
 

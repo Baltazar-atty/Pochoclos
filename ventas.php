@@ -13,14 +13,12 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 
 // 1. OBTENER VENTAS Y PRODUCTOS (GET)
 if ($metodo === 'GET') {
-    $totalVendidas = 50; // Valor demostrativo para mostrar 50% en la barra
+    $totalVendidas = 0;
 
     if (isset($con) && $con) {
-        $resTotal = $con->query("SELECT SUM(cantidad) AS total FROM ventas");
+        $resTotal = $con->query("SELECT COALESCE(SUM(cantidad), 0) AS total FROM ventas WHERE DATE(fecha_venta) = CURDATE()");
         if ($resTotal && $row = $resTotal->fetch_assoc()) {
-            if (!empty($row['total']) && (int)$row['total'] > 0) {
-                $totalVendidas = (int)$row['total'];
-            }
+            $totalVendidas = (int)$row['total'];
         }
 
         $resProductos = $con->query("SELECT id, tipo, subtipo, precio FROM productos ORDER BY id ASC");
