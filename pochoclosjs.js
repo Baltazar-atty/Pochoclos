@@ -1,6 +1,7 @@
 let usuarioSesion = null;
 let calificacionActual = 5;
 let productosDisponibles = [];
+const productosSeleccionados = new Map();
 let anchoFranjasCalculado = 0;
 
 function ajustarFranjasFondo() {
@@ -297,7 +298,7 @@ function renderizarBotoneraProductos() {
     const nombre = prod.tipo === 'maletin' ? `Maletín ${prod.subtipo}` : prod.tipo;
     const imagen = obtenerImagenProducto(prod);
     grid.innerHTML += `
-      <div class="product-btn" data-value="${prod.id}" onclick="seleccionarProducto(${prod.id}, this)">
+      <div class="product-btn${productosSeleccionados.has(String(prod.id)) ? ' active' : ''}" data-value="${prod.id}" onclick="seleccionarProducto(${prod.id}, this)">
         <img src="${imagen}" alt="${nombre}" onerror="this.onerror=null; this.style.display='none';">
         <span>${nombre}</span>
         <small>$${prod.precio}</small>
@@ -316,29 +317,114 @@ function obtenerImagenProducto(producto) {
 }
 
 function seleccionarProducto(id, elemento) {
-  const inputProducto = document.getElementById('venta-producto');
-  if (inputProducto) inputProducto.value = id;
+  const productoId = String(id);
+  if (productosSeleccionados.has(productoId)) {
+    productosSeleccionados.delete(productoId);
+  } else {
+    const producto = productosDisponibles.find(prod => String(prod.id) === productoId);
+    if (!producto) return;
+    productosSeleccionados.set(productoId, { producto, cantidad: 1 });
+  }
 
-  document.querySelectorAll('#grid-productos .product-btn').forEach(boton => {
-    boton.classList.toggle('active', boton === elemento);
+  elemento.classList.toggle('active', productosSeleccionados.has(productoId));
+  renderizarProductosSeleccionados();
+}
+
+function renderizarProductosSeleccionados() {
+  const contenedor = document.getElementById('productos-seleccionados');
+  if (!contenedor) return;
+
+  contenedor.replaceChildren();
+  if (productosSeleccionados.size === 0) {
+    const vacio = document.createElement('p');
+    vacio.className = 'selected-products-empty';
+    vacio.textContent = 'Todavía no seleccionaste productos.';
+    contenedor.appendChild(vacio);
+    return;
+  }
+
+  productosSeleccionados.forEach(({ producto, cantidad }, productoId) => {
+    const nombre = producto.tipo === 'maletin' ? `Maletín ${producto.subtipo}` : producto.tipo;
+    const fila = document.createElement('div');
+    fila.className = 'selected-product';
+
+    const imagen = document.createElement('img');
+    imagen.src = obtenerImagenProducto(producto);
+    imagen.alt = nombre;
+    imagen.onerror = () => {
+      imagen.onerror = null;
+      imagen.style.visibility = 'hidden';
+    };
+
+    const etiqueta = document.createElement('span');
+    etiqueta.className = 'selected-product-name';
+    etiqueta.textContent = nombre;
+
+    const cantidadInput = document.createElement('input');
+    cantidadInput.type = 'number';
+    cantidadInput.className = 'form-control selected-product-quantity';
+    cantidadInput.min = '1';
+    cantidadInput.step = '1';
+    cantidadInput.value = cantidad;
+    cantidadInput.required = true;
+    cantidadInput.setAttribute('aria-label', `Unidades de ${nombre}`);
+    cantidadInput.addEventListener('change', () => {
+      const nuevaCantidad = Number(cantidadInput.value);
+      if (!Number.isInteger(nuevaCantidad) || nuevaCantidad < 1) {
+        cantidadInput.value = cantidad;
+        return;
+      }
+      productosSeleccionados.get(productoId).cantidad = nuevaCantidad;
+    });
+
+    const quitar = document.createElement('button');
+    quitar.type = 'button';
+    quitar.className = 'selected-product-remove';
+    quitar.textContent = '×';
+    quitar.title = `Quitar ${nombre}`;
+    quitar.setAttribute('aria-label', `Quitar ${nombre}`);
+    quitar.addEventListener('click', () => {
+      productosSeleccionados.delete(productoId);
+      document.querySelector(`#grid-productos .product-btn[data-value="${productoId}"]`)?.classList.remove('active');
+      renderizarProductosSeleccionados();
+    });
+
+    fila.append(imagen, etiqueta, cantidadInput, quitar);
+    contenedor.appendChild(fila);
   });
 }
 
 async function registrarVenta(evento) {
   evento.preventDefault();
 
-  const productoId = document.getElementById('venta-producto').value;
-  const cantidad = Number(document.getElementById('venta-cantidad').value);
-  if (!productoId) {
-    alert('Seleccioná un producto antes de confirmar la venta.');
-    return;
-  }
-  if (!Number.isInteger(cantidad) || cantidad < 1) {
-    alert('Ingresá una cantidad válida.');
+  if (productosSeleccionados.size === 0) {
+    alert('Seleccioná al menos un producto antes de confirmar la venta.');
     return;
   }
 
-  await enviarVentaBD(productoId, cantidad);
+  const selecciones = Array.from(productosSeleccionados.entries());
+  if (selecciones.some(([, seleccion]) => !Number.isInteger(seleccion.cantidad) || seleccion.cantidad < 1)) {
+    alert('Cada producto debe tener una cantidad válida de 1 o más.');
+    return;
+  }
+
+  let registradas = 0;
+  for (const [productoId, seleccion] of selecciones) {
+    const resultado = await enviarVentaBD(productoId, seleccion.cantidad);
+    if (resultado.success) {
+      productosSeleccionados.delete(productoId);
+      document.querySelector(`#grid-productos .product-btn[data-value="${productoId}"]`)?.classList.remove('active');
+      registradas++;
+    }
+  }
+
+  renderizarProductosSeleccionados();
+  if (registradas === selecciones.length) {
+    alert(`Se registraron ${registradas} producto(s) correctamente.`);
+  } else {
+    alert(`Se registraron ${registradas} de ${selecciones.length} productos. Los pendientes siguen seleccionados para reintentar.`);
+  }
+  if (registradas > 0) cargarDatosVentas();
 }
 
 async function enviarVentaBD(productoId, cantidad) {
@@ -350,13 +436,9 @@ async function enviarVentaBD(productoId, cantidad) {
     });
 
     const data = await res.json();
-    alert(data.message);
-
-    if (data.success) {
-      cargarDatosVentas();
-    }
+    return { success: Boolean(data.success) };
   } catch (err) {
-    alert('Error al registrar la venta.');
+    return { success: false };
   }
 }
 
