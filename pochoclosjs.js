@@ -1,6 +1,158 @@
 let usuarioSesion = null;
 let calificacionActual = 5;
 let productosDisponibles = [];
+let anchoFranjasCalculado = 0;
+
+function ajustarFranjasFondo() {
+  const ancho = document.documentElement.clientWidth;
+  if (!ancho || ancho === anchoFranjasCalculado) return;
+
+  const cantidadFranjas = Math.max(3, 2 * Math.round((ancho / 64 - 1) / 2) + 1);
+  document.documentElement.style.setProperty('--stripe-width', `${ancho / cantidadFranjas}px`);
+  anchoFranjasCalculado = ancho;
+}
+
+ajustarFranjasFondo();
+window.addEventListener('resize', ajustarFranjasFondo);
+new ResizeObserver(ajustarFranjasFondo).observe(document.documentElement);
+
+function mejorarEsteticaSelect(select) {
+  const contenedor = document.createElement('div');
+  contenedor.className = 'custom-select';
+  select.parentNode.insertBefore(contenedor, select);
+  contenedor.appendChild(select);
+
+  const etiqueta = Array.from(document.querySelectorAll('label[for]'))
+    .find(label => label.htmlFor === select.id);
+  if (etiqueta && !etiqueta.id) etiqueta.id = `${select.id}-label`;
+
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'select-trigger form-control';
+  boton.setAttribute('role', 'combobox');
+  boton.setAttribute('aria-haspopup', 'listbox');
+  boton.setAttribute('aria-expanded', 'false');
+  boton.setAttribute('aria-controls', `${select.id}-opciones`);
+  if (etiqueta) boton.setAttribute('aria-labelledby', etiqueta.id);
+  else boton.setAttribute('aria-label', 'Seleccionar una opción');
+  etiqueta?.addEventListener('click', event => {
+    event.preventDefault();
+    boton.focus();
+  });
+
+  const lista = document.createElement('div');
+  lista.className = 'select-options';
+  lista.id = `${select.id}-opciones`;
+  lista.setAttribute('role', 'listbox');
+  lista.hidden = true;
+
+  select.classList.add('custom-select-native');
+  select.setAttribute('aria-hidden', 'true');
+  select.tabIndex = -1;
+  contenedor.append(boton, lista);
+
+  function sincronizarOpciones() {
+    boton.textContent = select.selectedOptions[0]?.textContent || 'Seleccionar...';
+    lista.replaceChildren();
+
+    Array.from(select.options).forEach(opcion => {
+      const elemento = document.createElement('button');
+      elemento.type = 'button';
+      elemento.className = 'select-option';
+      elemento.setAttribute('role', 'option');
+      elemento.setAttribute('aria-selected', String(opcion.selected));
+      elemento.disabled = opcion.disabled;
+
+      const texto = document.createElement('span');
+      texto.textContent = opcion.textContent;
+      const marca = document.createElement('span');
+      marca.className = 'select-option-check';
+      marca.setAttribute('aria-hidden', 'true');
+      marca.textContent = '✓';
+      elemento.append(texto, marca);
+
+      elemento.addEventListener('click', () => {
+        select.value = opcion.value;
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        sincronizarOpciones();
+        cerrarLista();
+        boton.focus();
+      });
+
+      lista.appendChild(elemento);
+    });
+  }
+
+  function cerrarLista() {
+    lista.hidden = true;
+    boton.setAttribute('aria-expanded', 'false');
+  }
+
+  function abrirLista(focoSeleccionado = false) {
+    lista.hidden = false;
+    boton.setAttribute('aria-expanded', 'true');
+    const espacioAbajo = window.innerHeight - contenedor.getBoundingClientRect().bottom;
+    const espacioArriba = contenedor.getBoundingClientRect().top;
+    lista.classList.toggle('opens-up', lista.offsetHeight > espacioAbajo && espacioArriba > espacioAbajo);
+    const opciones = Array.from(lista.querySelectorAll('.select-option:not(:disabled)'));
+    const seleccionada = opciones.find(option => option.getAttribute('aria-selected') === 'true');
+    (focoSeleccionado ? seleccionada || opciones[0] : opciones[0])?.focus();
+  }
+
+  boton.addEventListener('click', () => {
+    if (lista.hidden) abrirLista();
+    else cerrarLista();
+  });
+
+  boton.addEventListener('keydown', event => {
+    if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+      event.preventDefault();
+      if (lista.hidden) abrirLista(event.key === 'ArrowUp');
+      else cerrarLista();
+    } else if (event.key === 'Escape') {
+      cerrarLista();
+    }
+  });
+
+  lista.addEventListener('keydown', event => {
+    if (event.key === 'Tab') {
+      cerrarLista();
+      return;
+    }
+
+    const opciones = Array.from(lista.querySelectorAll('.select-option:not(:disabled)'));
+    const indice = opciones.indexOf(document.activeElement);
+    let destino;
+
+    if (event.key === 'ArrowDown') destino = (indice + 1) % opciones.length;
+    else if (event.key === 'ArrowUp') destino = (indice - 1 + opciones.length) % opciones.length;
+    else if (event.key === 'Home') destino = 0;
+    else if (event.key === 'End') destino = opciones.length - 1;
+    else if (event.key === 'Escape') {
+      event.preventDefault();
+      cerrarLista();
+      boton.focus();
+      return;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    opciones[destino]?.focus();
+  });
+
+  select.addEventListener('change', sincronizarOpciones);
+  new MutationObserver(sincronizarOpciones).observe(select, { childList: true });
+  select.form?.addEventListener('reset', () => setTimeout(sincronizarOpciones));
+  document.addEventListener('pointerdown', event => {
+    if (!contenedor.contains(event.target)) cerrarLista();
+  });
+  document.addEventListener('focusin', event => {
+    if (!contenedor.contains(event.target)) cerrarLista();
+  });
+
+  sincronizarOpciones();
+}
 
 // 1. CARGAR RESEÑAS / COMENTARIOS DESDE LA BD
 async function cargarComentarios() {
@@ -432,6 +584,7 @@ function explotarPochoclos(e) {
 
 // INICIALIZACIÓN
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('select.form-control').forEach(mejorarEsteticaSelect);
   seleccionarCalificacion(5);
   cargarComentarios();
   cargarDatosVentas();
