@@ -38,6 +38,19 @@
         <p style="margin-top: 8px; font-weight: 600;">
           🍿 Llevamos vendidas: <span id="total-vendidas" style="color: #e11d48;">0</span> unidades.
         </p>
+
+        <p style="font-weight: 700; color: var(--text-muted); margin: 20px 0 12px;">
+          Ventas de los últimos cinco días
+        </p>
+        <div class="form-group" style="max-width: 320px; margin: 0 auto 15px;">
+          <label for="filtro-carrito-grafico">Ver ventas de:</label>
+          <select id="filtro-carrito-grafico" class="form-control" onchange="cargarGraficoVentas()">
+            <option value="todos">Todos los carritos</option>
+          </select>
+        </div>
+        <div class="chart-container" id="chart-5-dias">
+          <p style="margin: auto; font-weight: 800; color: var(--text-muted);">Cargando gráfico...</p>
+        </div>
       </div>
 
       <!-- UBICACIÓN DEL CARRITO -->

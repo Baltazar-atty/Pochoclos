@@ -208,6 +208,49 @@ async function enviarVentaBD(productoId, cantidad) {
   }
 }
 
+let carritosCargados = false;
+
+async function cargarGraficoVentas() {
+  const selector = document.getElementById('filtro-carrito-grafico');
+  const contenedor = document.getElementById('chart-5-dias');
+  if (!contenedor) return;
+
+  const carritoId = selector ? selector.value : 'todos';
+
+  try {
+    const respuesta = await fetch(`estadisticas_ventas.php?carrito_id=${carritoId}`);
+    const datos = await respuesta.json();
+    if (!datos.success) throw new Error('No se pudieron cargar las ventas.');
+
+    if (selector && !carritosCargados) {
+      selector.innerHTML = '<option value="todos">Todos los carritos</option>';
+      datos.carritos.forEach(carrito => {
+        const opcion = document.createElement('option');
+        opcion.value = carrito.id;
+        opcion.textContent = `${carrito.nombre} (${carrito.ubicacion})`;
+        selector.appendChild(opcion);
+      });
+      carritosCargados = true;
+    }
+
+    contenedor.innerHTML = '';
+    datos.datos.forEach(dia => {
+      const porcentaje = dia.total === 0 ? 8 : Math.round((dia.total / datos.max_ventas) * 100);
+      const grupo = document.createElement('div');
+      grupo.className = `chart-bar-group${dia.es_hoy ? ' active' : ''}`;
+      grupo.innerHTML = `
+        <span class="chart-value">${dia.total}</span>
+        <div class="chart-bar" style="height: ${porcentaje}%;"></div>
+        <span class="chart-label">${dia.etiqueta}</span>
+      `;
+      contenedor.appendChild(grupo);
+    });
+  } catch (error) {
+    console.error('Error al cargar el gráfico de ventas:', error);
+    contenedor.innerHTML = '<p style="margin: auto; color: var(--red-pop); font-weight: 800;">No se pudieron cargar las ventas.</p>';
+  }
+}
+
 // 4. MODAL Y LOGIN
 function abrirModalLogin() {
   document.getElementById('modal-login').classList.remove('hidden');
@@ -392,4 +435,5 @@ document.addEventListener('DOMContentLoaded', () => {
   seleccionarCalificacion(5);
   cargarComentarios();
   cargarDatosVentas();
+  cargarGraficoVentas();
 });

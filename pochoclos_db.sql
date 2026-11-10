@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 30-09-2026 a las 00:39:18
+-- Tiempo de generación: 13-10-2026 a las 23:09:50
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -42,8 +42,8 @@ CREATE TABLE `carritos` (
 --
 
 INSERT INTO `carritos` (`id`, `nombre`, `ubicacion_lat`, `ubicacion_lng`, `estado`, `stock_cajas`, `ultima_actualizacion`) VALUES
-(1, 'Carrito #1: Plaza Central', -36.53000000, -56.69000000, 'online', 12, '2026-09-22 21:19:29'),
-(2, 'Carrito #2: Peatonal / Playa', -36.54000000, -56.70000000, 'warning', 5, '2026-09-22 21:19:29');
+(1, 'Carrito #1: Plaza Central', -36.53000000, -56.69000000, 'online', 12, '2026-09-23 00:19:29'),
+(2, 'Carrito #2: Peatonal / Playa', -36.54000000, -56.70000000, 'warning', 5, '2026-09-23 00:19:29');
 
 -- --------------------------------------------------------
 
@@ -63,7 +63,7 @@ CREATE TABLE `configuracion_promo` (
 --
 
 INSERT INTO `configuracion_promo` (`id`, `total_ventas_historicas`, `ventas_hoy`, `meta_actual`) VALUES
-(1, 4501, 129, 200);
+(1, 4516, 144, 200);
 
 -- --------------------------------------------------------
 
@@ -111,8 +111,8 @@ CREATE TABLE `resenas` (
 --
 
 INSERT INTO `resenas` (`id`, `nombre_cliente`, `comentario`, `puntuacion`, `carrito_id`, `fecha`, `estado`) VALUES
-(1, 'Carlos M.', '¡Los pochoclos del carrito de la plaza estaban súper frescos!', 5, NULL, '2026-09-22 21:19:29', 'aprobada'),
-(2, 'María L.', 'Muy buen combo el maletín de Cars para los chicos.', 4, NULL, '2026-09-22 21:19:29', 'aprobada');
+(1, 'Carlos M.', '¡Los pochoclos del carrito de la plaza estaban súper frescos!', 5, NULL, '2026-09-23 00:19:29', 'aprobada'),
+(2, 'María L.', 'Muy buen combo el maletín de Cars para los chicos.', 4, NULL, '2026-09-23 00:19:29', 'aprobada');
 
 -- --------------------------------------------------------
 
@@ -136,8 +136,8 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nombre`, `apellido`, `email`, `password`, `rol`, `carrito_id`, `fecha_creacion`) VALUES
-(2, 'Administrador', 'General', 'admin@pochoclos.com', '$2y$10$pCSDSBwhqcPqkXPF7grzVe8n/EnjAHn6UGja82jbfWBIR6fDVSSSa', 'admin', NULL, '2026-09-22 23:43:30'),
-(3, 'lautaro', 'galvagno', 'lautarooscar@gmail.com', '$2y$10$Kp4rqWfKxZwSqsSqtu.wauLqFzZ1zT6HZiJLsB.VXuSGGYqT8DdXS', 'empleado', 2, '2026-09-23 00:26:16');
+(2, 'Administrador', 'General', 'admin@pochoclos.com', '$2y$10$pCSDSBwhqcPqkXPF7grzVe8n/EnjAHn6UGja82jbfWBIR6fDVSSSa', 'admin', NULL, '2026-09-23 02:43:30'),
+(3, 'lautaro', 'galvagno', 'lautarooscar@gmail.com', '$2y$10$Kp4rqWfKxZwSqsSqtu.wauLqFzZ1zT6HZiJLsB.VXuSGGYqT8DdXS', 'empleado', 2, '2026-09-23 03:26:16');
 
 -- --------------------------------------------------------
 
@@ -160,7 +160,22 @@ CREATE TABLE `ventas` (
 --
 
 INSERT INTO `ventas` (`id`, `carrito_id`, `producto_id`, `cantidad`, `fecha_venta`, `latitud`, `longitud`) VALUES
-(1, 2, 2, 1, '2026-09-29 22:32:16', NULL, NULL);
+(1, 2, 2, 1, '2026-09-30 01:32:16', NULL, NULL),
+(2, 2, 1, 1, '2026-09-29 23:33:21', NULL, NULL),
+(3, 2, 1, 1, '2026-09-29 23:33:39', NULL, NULL),
+(4, 2, 2, 1, '2026-09-29 23:34:29', NULL, NULL),
+(5, 2, 2, 1, '2026-09-29 23:34:29', NULL, NULL),
+(6, 2, 2, 1, '2026-09-29 23:34:29', NULL, NULL),
+(7, 2, 2, 1, '2026-09-29 23:34:29', NULL, NULL),
+(8, 2, 1, 1, '2026-09-29 23:35:15', NULL, NULL),
+(9, 2, 2, 1, '2026-09-29 23:41:53', NULL, NULL),
+(10, 2, 2, 1, '2026-09-29 23:42:22', NULL, NULL),
+(11, 2, 1, 1, '2026-09-30 00:07:51', -36.53138462, -56.71205599),
+(12, 2, 2, 1, '2026-09-30 00:32:59', -36.53138147, -56.71206980),
+(13, 2, 1, 1, '2026-09-30 00:34:11', -36.53137863, -56.71206885),
+(14, 2, 1, 1, '2026-09-30 00:34:11', -36.53137863, -56.71206885),
+(15, 2, 2, 1, '2026-09-30 00:35:45', -36.53138025, -56.71205400),
+(16, 2, 1, 1, '2026-10-13 20:59:12', -36.53131400, -56.71208000);
 
 --
 -- Índices para tablas volcadas
@@ -245,7 +260,7 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `ventas`
 --
 ALTER TABLE `ventas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
 --
 -- Restricciones para tablas volcadas
