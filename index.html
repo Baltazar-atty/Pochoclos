@@ -3,19 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pochoclos App</title>
+  <title>Pochoclos La Costa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
-  <link rel="stylesheet" href="pochoclos.css?v=20261110_15">
+  <link rel="stylesheet" href="pochoclos.css?v=20261110_20">
 </head>
 <body>
 
   <!-- ENCABEZADO CON TÍTULO CENTRADO Y LOGIN A LA DERECHA -->
   <header>
     <div class="nav-brand">
-      <span class="popcorn-interactive" onclick="explotarPochoclos(event)">🍿</span> Pochoclos App
+      <button type="button" class="popcorn-interactive" aria-label="Pochoclos La Costa, tocar para lanzar pochoclos" onclick="explotarPochoclos(event)">
+        <img src="img/logo%20pochoclos%20la%20costa.jpeg" alt="">
+      </button>
+      <span>Pochoclos La Costa</span>
     </div>
 
     <div class="nav-actions">
+      <a class="instagram-link" href="https://www.instagram.com/pochoclos.lacosta?cplk=MXFiOHJ2dGJxZHFvZg==" target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram de Pochoclos La Costa">
+        <img src="img/instagram.jpeg" alt="Pochoclos La Costa en Instagram">
+      </a>
       <button id="btn-abrir-login" class="btn-login" onclick="abrirModalLogin()">Iniciar Sesión</button>
       <span id="label-usuario" class="hidden" style="font-weight: 600; font-size: 0.9rem;"></span>
       <button id="btn-cerrar-sesion" class="btn btn-danger hidden" onclick="cerrarSesion()">Salir</button>

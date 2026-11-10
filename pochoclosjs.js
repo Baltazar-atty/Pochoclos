@@ -640,7 +640,7 @@ async function eliminarEmpleado(id) {
 
 // EFECTO POCHOCLOS VOLADORES
 function explotarPochoclos(e) {
-  const rect = e.target.getBoundingClientRect();
+  const rect = e.currentTarget.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
 
