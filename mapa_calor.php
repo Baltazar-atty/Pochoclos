@@ -1,6 +1,4 @@
 <?php
-<<<<<<< HEAD
-
 session_start();
 
 if (($_SESSION['rol'] ?? null) !== 'admin') {
@@ -8,16 +6,6 @@ if (($_SESSION['rol'] ?? null) !== 'admin') {
     exit('Acceso restringido.');
 }
 
-include("conexion.php");
-
-$ventas = [];
-
-$sql = "SELECT latitud, longitud, cantidad 
-        FROM ventas 
-        WHERE latitud IS NOT NULL 
-        AND longitud IS NOT NULL";
-
-=======
 require_once 'conexion.php';
 
 $ventas = [];
@@ -28,7 +16,6 @@ $sql = "SELECT ROUND(latitud, 5) AS latitud,
         WHERE latitud IS NOT NULL
           AND longitud IS NOT NULL
         GROUP BY ROUND(latitud, 5), ROUND(longitud, 5)";
->>>>>>> rama2
 $resultado = $con->query($sql);
 
 if ($resultado) {
@@ -41,14 +28,11 @@ if ($resultado) {
     }
 }
 
-<<<<<<< HEAD
 $con->close();
 
-=======
 $centro = count($ventas) > 0
     ? [$ventas[0]['lat'], $ventas[0]['lng']]
     : [-36.5417, -56.6880];
->>>>>>> rama2
 ?>
 <!DOCTYPE html>
 <html lang="es">
