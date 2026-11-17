@@ -279,34 +279,6 @@ main, section {
   z-index: 0;
 }
 
-.map-legend {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px 18px;
-  margin-top: 12px;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.map-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.map-legend i {
-  display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-}
-
-.map-legend-live {
-  background: #fb7185;
-  border: 2px solid #e11d48;
-}
-
 .map-status,
 .sharing-status {
   margin: 10px 0 0;

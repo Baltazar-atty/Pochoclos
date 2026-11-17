@@ -459,18 +459,13 @@ async function cargarUbicacionesPublicas() {
 
     capaVendedores.clearLayers();
     datos.zonas.forEach(zona => {
-      const circulo = L.circle([zona.latitud, zona.longitud], {
-        radius: 200,
-        color: '#e11d48',
-        fillColor: '#fb7185',
-        fillOpacity: 0.35,
-        weight: 2
-      }).bindPopup('Vendedor compartiendo ubicación · zona aproximada');
-      capaVendedores.addLayer(circulo);
+      const marcador = L.marker([zona.latitud, zona.longitud])
+        .bindPopup('Vendedor compartiendo ubicación · punto aproximado');
+      capaVendedores.addLayer(marcador);
     });
 
     estado.textContent = datos.zonas.length
-      ? 'Se muestran las zonas aproximadas de los vendedores que comparten su ubicación.'
+      ? 'Se muestran las ubicaciones aproximadas de los vendedores que comparten su ubicación.'
       : 'No hay vendedores compartiendo su ubicación en vivo.';
   } catch (error) {
     console.error('Error al cargar las ubicaciones públicas:', error);
