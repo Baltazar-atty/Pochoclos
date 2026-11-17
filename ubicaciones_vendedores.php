@@ -15,10 +15,10 @@ if ($metodo === 'GET') {
         exit;
     }
 
-    $sql = "SELECT ROUND(latitud, 2) AS latitud, ROUND(longitud, 2) AS longitud,
+    $sql = "SELECT ROUND(latitud, 3) AS latitud, ROUND(longitud, 3) AS longitud,
                    DATE_FORMAT(MAX(actualizada_en), '%Y-%m-%dT%H:%i:%sZ') AS actualizada_en
             FROM ubicaciones_vendedores
-            GROUP BY ROUND(latitud, 2), ROUND(longitud, 2)";
+            GROUP BY ROUND(latitud, 3), ROUND(longitud, 3)";
     $resultado = $con->query($sql);
 
     if (!$resultado) {
