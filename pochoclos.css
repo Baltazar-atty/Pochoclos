@@ -302,10 +302,6 @@ main, section {
   border-radius: 50%;
 }
 
-.map-legend-cart {
-  background: #2563eb;
-}
-
 .map-legend-live {
   background: #fb7185;
   border: 2px solid #e11d48;

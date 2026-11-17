@@ -458,17 +458,9 @@ async function cargarUbicacionesPublicas() {
     if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudieron cargar las ubicaciones.');
 
     capaVendedores.clearLayers();
-    datos.carritos.forEach(carrito => {
-      const marcador = L.marker([carrito.latitud, carrito.longitud]);
-      const contenido = document.createElement('span');
-      contenido.textContent = `${carrito.nombre} · zona de referencia`;
-      marcador.bindPopup(contenido);
-      capaVendedores.addLayer(marcador);
-    });
-
     datos.zonas.forEach(zona => {
       const circulo = L.circle([zona.latitud, zona.longitud], {
-        radius: 700,
+        radius: 200,
         color: '#e11d48',
         fillColor: '#fb7185',
         fillOpacity: 0.35,
@@ -478,8 +470,8 @@ async function cargarUbicacionesPublicas() {
     });
 
     estado.textContent = datos.zonas.length
-      ? 'Se muestran las zonas de referencia y las ubicaciones aproximadas en vivo.'
-      : 'Se muestran las zonas de referencia. No hay vendedores compartiendo su ubicación en vivo.';
+      ? 'Se muestran las zonas aproximadas de los vendedores que comparten su ubicación.'
+      : 'No hay vendedores compartiendo su ubicación en vivo.';
   } catch (error) {
     console.error('Error al cargar las ubicaciones públicas:', error);
     estado.textContent = 'No se pudieron cargar las ubicaciones. Intentaremos nuevamente.';

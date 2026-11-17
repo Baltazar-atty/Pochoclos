@@ -15,27 +15,6 @@ if ($metodo === 'GET') {
         exit;
     }
 
-    $resultadoCarritos = $con->query(
-        "SELECT id, nombre, ROUND(ubicacion_lat, 2) AS latitud, ROUND(ubicacion_lng, 2) AS longitud
-         FROM carritos
-         WHERE estado <> 'offline'
-         ORDER BY id ASC"
-    );
-    if (!$resultadoCarritos) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'message' => 'No se pudieron consultar las ubicaciones de los carritos.']);
-        exit;
-    }
-
-    $carritos = [];
-    while ($fila = $resultadoCarritos->fetch_assoc()) {
-        $carritos[] = [
-            'nombre' => $fila['nombre'],
-            'latitud' => (float)$fila['latitud'],
-            'longitud' => (float)$fila['longitud']
-        ];
-    }
-
     $sql = "SELECT ROUND(latitud, 2) AS latitud, ROUND(longitud, 2) AS longitud,
                    DATE_FORMAT(MAX(actualizada_en), '%Y-%m-%dT%H:%i:%sZ') AS actualizada_en
             FROM ubicaciones_vendedores
@@ -59,7 +38,6 @@ if ($metodo === 'GET') {
 
     echo json_encode([
         'success' => true,
-        'carritos' => $carritos,
         'zonas' => $zonas
     ], JSON_UNESCAPED_UNICODE);
     exit;
