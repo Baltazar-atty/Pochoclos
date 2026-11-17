@@ -7,8 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
-  <link rel="stylesheet" href="pochoclos.css?v=20261110_20">
+  <link rel="stylesheet" href="pochoclos.css?v=20261117_23">
 </head>
 <body>
 
@@ -37,39 +38,16 @@
     <!-- 1. VISTA PÚBLICA -->
     <main id="vista-publica">
       
-      <!-- METAS Y VENTAS -->
+      <!-- UBICACIONES DE LOS CARRITOS -->
       <div class="card">
-        <h2 class="chart-heading"><span class="chart-icon" aria-hidden="true"><span></span><span></span><span></span></span>Pochoclos Vendidos Hoy</h2>
-        <p style="font-size: 0.85rem; color: #64748b;">Meta diaria: 100 unidades</p>
-        <div class="progress-bar-container">
-          <div id="barra-pochoclos" class="progress-bar" style="width: 0%;">0%</div>
+        <h2>📍 Encontrá a nuestros vendedores</h2>
+        <p class="locations-intro">Los marcadores muestran la zona de referencia de cada carrito. Las zonas de vendedores activos aparecen cuando comparten su ubicación.</p>
+        <div id="mapa-vendedores" class="vendors-map" role="application" aria-label="Mapa de zonas aproximadas de vendedores"></div>
+        <div class="map-legend" aria-label="Referencias del mapa">
+          <span><i class="map-legend-cart" aria-hidden="true"></i>Zona de referencia del carrito</span>
+          <span><i class="map-legend-live" aria-hidden="true"></i>Zona aproximada en vivo</span>
         </div>
-        <p style="margin-top: 8px; font-weight: 600;">
-          🍿 Llevamos vendidas: <span id="total-vendidas" style="color: #e11d48;">0</span> unidades.
-        </p>
-
-        <p style="font-weight: 700; color: var(--text-muted); margin: 20px 0 12px;">
-          Ventas de los últimos cinco días
-        </p>
-        <div class="form-group" style="max-width: 320px; margin: 0 auto 15px;">
-          <label for="filtro-carrito-grafico">Ver ventas de:</label>
-          <select id="filtro-carrito-grafico" class="form-control" onchange="cargarGraficoVentas()">
-            <option value="todos">Todos los carritos</option>
-          </select>
-        </div>
-        <div class="chart-container" id="chart-5-dias">
-          <p style="margin: auto; font-weight: 800; color: var(--text-muted);">Cargando gráfico...</p>
-        </div>
-      </div>
-
-      <!-- UBICACIÓN DEL CARRITO -->
-      <div class="card">
-        <h2>📍 Ubicación del Carrito</h2>
-        <div class="location-summary">
-          <h3 class="location-title">Plaza Central</h3>
-          <p class="location-address">Av. San Martín y Calle 3</p>
-          <p class="location-status"><span class="status-dot" aria-hidden="true"></span>Abierto ahora</p>
-        </div>
+        <p id="estado-mapa-vendedores" class="map-status" aria-live="polite">Cargando ubicaciones...</p>
       </div>
 
       <!-- SECCIÓN DE COMENTARIOS Y RESEÑAS -->
@@ -169,6 +147,12 @@
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
           Seleccioná un producto de la botonera y la cantidad para registrar la venta.
         </p>
+        <div class="location-sharing">
+          <p>Si compartís tu ubicación, los visitantes verán solo una zona aproximada (no tu punto exacto). El seguimiento se mantiene mientras tengas la sesión iniciada y esta página abierta. Necesitás permitir el acceso a la ubicación y usar HTTPS (excepto en localhost).</p>
+          <button id="btn-compartir-ubicacion" type="button" class="btn btn-primary" onclick="iniciarSeguimientoUbicacion()">Compartir mi ubicación</button>
+          <button id="btn-detener-ubicacion" type="button" class="btn btn-danger hidden" onclick="detenerSeguimientoUbicacion()">Dejar de compartir</button>
+          <p id="estado-ubicacion-vendedor" class="sharing-status" aria-live="polite">Ubicación no compartida.</p>
+        </div>
 
         <form onsubmit="registrarVenta(event)">
           <div class="form-group">
@@ -219,6 +203,7 @@
   </div>
 
   <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
-  <script src="pochoclosjs.js?v=20261110_07"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="pochoclosjs.js?v=20261117_10"></script>
 </body>
 </html>

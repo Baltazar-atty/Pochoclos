@@ -1,5 +1,12 @@
 <?php
 
+session_start();
+
+if (($_SESSION['rol'] ?? null) !== 'admin') {
+    http_response_code(403);
+    exit('Acceso restringido.');
+}
+
 include("conexion.php");
 
 $ventas = [];
@@ -9,7 +16,7 @@ $sql = "SELECT latitud, longitud, cantidad
         WHERE latitud IS NOT NULL 
         AND longitud IS NOT NULL";
 
-$resultado = $conexion->query($sql);
+$resultado = $con->query($sql);
 
 if ($resultado) {
 
@@ -25,7 +32,7 @@ if ($resultado) {
 
 }
 
-$conexion->close();
+$con->close();
 
 ?>
 

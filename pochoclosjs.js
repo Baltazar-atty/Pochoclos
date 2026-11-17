@@ -3,6 +3,12 @@ let calificacionActual = 5;
 let productosDisponibles = [];
 const productosSeleccionados = new Map();
 let anchoFranjasCalculado = 0;
+let mapaVendedores = null;
+let capaVendedores = null;
+let seguimientoUbicacionId = null;
+let intervaloEnvioUbicacion = null;
+let ultimaCoordenada = null;
+let envioUbicacionEnCurso = false;
 
 function ajustarFranjasFondo() {
   const ancho = document.documentElement.clientWidth;
@@ -258,34 +264,14 @@ async function cargarDatosVentas() {
     const res = await fetch('ventas.php');
     const data = await res.json();
 
-    if (data.success) {
-      productosDisponibles = data.productos || [];
-      const totalMostrar = Number(data.total_vendidas) || 0;
-      actualizarBarraPublica(totalMostrar);
+    if (!data.success) throw new Error('No se pudieron cargar los productos.');
+    productosDisponibles = data.productos || [];
 
-      if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
-        renderizarBotoneraProductos();
-      }
-    } else {
-      actualizarBarraPublica(0);
+    if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
+      renderizarBotoneraProductos();
     }
   } catch (err) {
-    console.error('Error al cargar ventas:', err);
-    actualizarBarraPublica(0);
-  }
-}
-
-function actualizarBarraPublica(totalVendidas) {
-  const meta = 100;
-  const porcentaje = Math.min(Math.round((totalVendidas / meta) * 100), 100);
-
-  const elTotal = document.getElementById('total-vendidas');
-  const elBarra = document.getElementById('barra-pochoclos');
-
-  if (elTotal) elTotal.textContent = totalVendidas;
-  if (elBarra) {
-    elBarra.style.width = `${porcentaje}%`;
-    elBarra.textContent = `${porcentaje}%`;
+    console.error('Error al cargar productos:', err);
   }
 }
 
@@ -442,46 +428,154 @@ async function enviarVentaBD(productoId, cantidad) {
   }
 }
 
-let carritosCargados = false;
+function inicializarMapaVendedores() {
+  const contenedor = document.getElementById('mapa-vendedores');
+  const estado = document.getElementById('estado-mapa-vendedores');
+  if (!contenedor || !estado) return;
+  if (!window.L) {
+    estado.textContent = 'No se pudo cargar el mapa.';
+    return;
+  }
 
-async function cargarGraficoVentas() {
-  const selector = document.getElementById('filtro-carrito-grafico');
-  const contenedor = document.getElementById('chart-5-dias');
-  if (!contenedor) return;
+  mapaVendedores = L.map(contenedor).setView([-36.54, -56.69], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(mapaVendedores);
+  capaVendedores = L.layerGroup().addTo(mapaVendedores);
 
-  const carritoId = selector ? selector.value : 'todos';
+  cargarUbicacionesPublicas();
+  window.setInterval(cargarUbicacionesPublicas, 15000);
+}
+
+async function cargarUbicacionesPublicas() {
+  const estado = document.getElementById('estado-mapa-vendedores');
+  if (!mapaVendedores || !capaVendedores || !estado) return;
 
   try {
-    const respuesta = await fetch(`estadisticas_ventas.php?carrito_id=${carritoId}`);
+    const respuesta = await fetch('ubicaciones_vendedores.php', { cache: 'no-store' });
     const datos = await respuesta.json();
-    if (!datos.success) throw new Error('No se pudieron cargar las ventas.');
+    if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudieron cargar las ubicaciones.');
 
-    if (selector && !carritosCargados) {
-      selector.innerHTML = '<option value="todos">Todos los carritos</option>';
-      datos.carritos.forEach(carrito => {
-        const opcion = document.createElement('option');
-        opcion.value = carrito.id;
-        opcion.textContent = `${carrito.nombre} (${carrito.ubicacion})`;
-        selector.appendChild(opcion);
-      });
-      carritosCargados = true;
-    }
-
-    contenedor.innerHTML = '';
-    datos.datos.forEach(dia => {
-      const porcentaje = dia.total === 0 ? 8 : Math.round((dia.total / datos.max_ventas) * 100);
-      const grupo = document.createElement('div');
-      grupo.className = `chart-bar-group${dia.es_hoy ? ' active' : ''}`;
-      grupo.innerHTML = `
-        <span class="chart-value">${dia.total}</span>
-        <div class="chart-bar" style="height: ${porcentaje}%;"></div>
-        <span class="chart-label">${dia.etiqueta}</span>
-      `;
-      contenedor.appendChild(grupo);
+    capaVendedores.clearLayers();
+    datos.carritos.forEach(carrito => {
+      const marcador = L.marker([carrito.latitud, carrito.longitud]);
+      const contenido = document.createElement('span');
+      contenido.textContent = `${carrito.nombre} · zona de referencia`;
+      marcador.bindPopup(contenido);
+      capaVendedores.addLayer(marcador);
     });
+
+    datos.zonas.forEach(zona => {
+      const circulo = L.circle([zona.latitud, zona.longitud], {
+        radius: 700,
+        color: '#e11d48',
+        fillColor: '#fb7185',
+        fillOpacity: 0.35,
+        weight: 2
+      }).bindPopup('Vendedor compartiendo ubicación · zona aproximada');
+      capaVendedores.addLayer(circulo);
+    });
+
+    estado.textContent = datos.zonas.length
+      ? 'Se muestran las zonas de referencia y las ubicaciones aproximadas en vivo.'
+      : 'Se muestran las zonas de referencia. No hay vendedores compartiendo su ubicación en vivo.';
   } catch (error) {
-    console.error('Error al cargar el gráfico de ventas:', error);
-    contenedor.innerHTML = '<p style="margin: auto; color: var(--red-pop); font-weight: 800;">No se pudieron cargar las ventas.</p>';
+    console.error('Error al cargar las ubicaciones públicas:', error);
+    estado.textContent = 'No se pudieron cargar las ubicaciones. Intentaremos nuevamente.';
+  }
+}
+
+function iniciarSeguimientoUbicacion() {
+  if (!usuarioSesion || usuarioSesion.rol !== 'empleado') return;
+
+  const estado = document.getElementById('estado-ubicacion-vendedor');
+  const botonCompartir = document.getElementById('btn-compartir-ubicacion');
+  const botonDetener = document.getElementById('btn-detener-ubicacion');
+  if (!navigator.geolocation) {
+    estado.textContent = 'Este navegador no permite compartir la ubicación.';
+    return;
+  }
+  if (seguimientoUbicacionId !== null) return;
+
+  ultimaCoordenada = null;
+  estado.textContent = 'Esperando permiso y ubicación del dispositivo...';
+  seguimientoUbicacionId = navigator.geolocation.watchPosition(posicion => {
+    ultimaCoordenada = {
+      latitud: posicion.coords.latitude,
+      longitud: posicion.coords.longitude
+    };
+    enviarUbicacionActual();
+  }, error => {
+    window.clearInterval(intervaloEnvioUbicacion);
+    intervaloEnvioUbicacion = null;
+    seguimientoUbicacionId = null;
+    estado.textContent = error.code === error.PERMISSION_DENIED
+      ? 'No se otorgó permiso para compartir la ubicación.'
+      : 'No se pudo obtener la ubicación del dispositivo.';
+    botonCompartir.classList.remove('hidden');
+    botonDetener.classList.add('hidden');
+  }, {
+    enableHighAccuracy: false,
+    maximumAge: 10000,
+    timeout: 20000
+  });
+  intervaloEnvioUbicacion = window.setInterval(enviarUbicacionActual, 15000);
+
+  botonCompartir.classList.add('hidden');
+  botonDetener.classList.remove('hidden');
+}
+
+async function enviarUbicacionActual() {
+  if (!ultimaCoordenada || envioUbicacionEnCurso || !usuarioSesion || usuarioSesion.rol !== 'empleado') return;
+
+  envioUbicacionEnCurso = true;
+  try {
+    const respuesta = await fetch('ubicaciones_vendedores.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'actualizar', ...ultimaCoordenada })
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudo compartir la ubicación.');
+
+    document.getElementById('estado-ubicacion-vendedor').textContent =
+      'Compartiendo tu zona aproximada con los visitantes.';
+    cargarUbicacionesPublicas();
+  } catch (error) {
+    console.error('Error al compartir la ubicación:', error);
+    document.getElementById('estado-ubicacion-vendedor').textContent =
+      'No se pudo compartir la ubicación. Revisá tu conexión e intentá nuevamente.';
+  } finally {
+    envioUbicacionEnCurso = false;
+  }
+}
+
+function detenerSeguimientoUbicacion() {
+  if (seguimientoUbicacionId !== null) {
+    navigator.geolocation.clearWatch(seguimientoUbicacionId);
+    seguimientoUbicacionId = null;
+  }
+  window.clearInterval(intervaloEnvioUbicacion);
+  intervaloEnvioUbicacion = null;
+  ultimaCoordenada = null;
+
+  const botonCompartir = document.getElementById('btn-compartir-ubicacion');
+  const botonDetener = document.getElementById('btn-detener-ubicacion');
+  const estado = document.getElementById('estado-ubicacion-vendedor');
+  botonCompartir?.classList.remove('hidden');
+  botonDetener?.classList.add('hidden');
+  if (estado) estado.textContent = 'Ubicación no compartida.';
+
+  if (usuarioSesion && usuarioSesion.rol === 'empleado') {
+    fetch('ubicaciones_vendedores.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'detener' }),
+      keepalive: true
+    }).then(respuesta => {
+      if (!respuesta.ok) throw new Error('No se pudo detener el seguimiento en el servidor.');
+    }).catch(error => console.error('Error al detener el seguimiento:', error));
   }
 }
 
@@ -542,6 +636,7 @@ function activarPanel(rol, nombre) {
 }
 
 function cerrarSesion() {
+  detenerSeguimientoUbicacion();
   usuarioSesion = null;
   document.getElementById('vista-admin').classList.add('hidden');
   document.getElementById('vista-empleado').classList.add('hidden');
@@ -550,6 +645,7 @@ function cerrarSesion() {
 
   document.getElementById('vista-publica').classList.remove('hidden');
   document.getElementById('btn-abrir-login').classList.remove('hidden');
+  window.requestAnimationFrame(() => mapaVendedores?.invalidateSize());
 }
 
 // 5. GESTIÓN DE EMPLEADOS (ADMIN)
@@ -669,6 +765,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('select.form-control').forEach(mejorarEsteticaSelect);
   seleccionarCalificacion(5);
   cargarComentarios();
-  cargarDatosVentas();
-  cargarGraficoVentas();
+  inicializarMapaVendedores();
 });

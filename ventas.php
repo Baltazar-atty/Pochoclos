@@ -13,25 +13,15 @@ $metodo = $_SERVER['REQUEST_METHOD'];
 
 // 1. OBTENER VENTAS Y PRODUCTOS (GET)
 if ($metodo === 'GET') {
-    $totalVendidas = 0;
-
-    if (isset($con) && $con) {
-        $resTotal = $con->query("SELECT COALESCE(SUM(cantidad), 0) AS total FROM ventas WHERE DATE(fecha_venta) = CURDATE()");
-        if ($resTotal && $row = $resTotal->fetch_assoc()) {
-            $totalVendidas = (int)$row['total'];
-        }
-
-        $resProductos = $con->query("SELECT id, tipo, subtipo, precio FROM productos ORDER BY id ASC");
-        $productos = [];
-        if ($resProductos) {
-            $productos = $resProductos->fetch_all(MYSQLI_ASSOC);
-        }
+    $resProductos = $con->query("SELECT id, tipo, subtipo, precio FROM productos ORDER BY id ASC");
+    $productos = [];
+    if ($resProductos) {
+        $productos = $resProductos->fetch_all(MYSQLI_ASSOC);
     }
 
     echo json_encode([
         'success' => true,
-        'total_vendidas' => $totalVendidas,
-        'productos' => $productos ?? []
+        'productos' => $productos
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
