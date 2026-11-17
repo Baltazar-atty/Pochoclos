@@ -134,10 +134,7 @@
           <!-- Carga dinámicamente desde la BD -->
         </ul>
       </div>
-    </section>
 
-    <!-- 3. VISTA EMPLEADO / VENDEDOR (BOTONERA DE VENTAS) -->
-          <!-- MAPA DE CALOR DE VENTAS -->
       <div class="card">
         <h2>🔥 Mapa de calor de ventas</h2>
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
@@ -145,7 +142,8 @@
         </p>
 
         <iframe
-          src="mapa_calor.php"
+          id="iframe-mapa-calor"
+          data-src="mapa_calor.php"
           title="Mapa de calor de ventas"
           width="100%"
           height="650"
@@ -153,6 +151,10 @@
           loading="lazy">
         </iframe>
       </div>
+
+    </section>
+
+    <!-- 3. VISTA EMPLEADO / VENDEDOR (BOTONERA DE VENTAS) -->
     <section id="vista-empleado" class="hidden">
       <div class="card">
         <h2>🛒 Panel Vendedor</h2>
@@ -216,6 +218,6 @@
 
   <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="pochoclosjs.js?v=20261117_15"></script>
+  <script src="pochoclosjs.js?v=20261117_16"></script>
 </body>
 </html>

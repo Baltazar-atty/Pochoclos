@@ -2,6 +2,12 @@
 session_start();
 header('Content-Type: application/json');
 
+if (($_SESSION['rol'] ?? null) !== 'admin' || empty($_SESSION['usuario_id'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Acceso restringido.']);
+    exit;
+}
+
 require_once 'conexion.php';
 
 $metodo = $_SERVER['REQUEST_METHOD'];

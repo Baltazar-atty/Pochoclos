@@ -21,6 +21,7 @@ $sql = "SELECT
         FROM ventas
         WHERE latitud IS NOT NULL
         AND longitud IS NOT NULL
+        AND NOT (latitud = -36.53000000 AND longitud = -56.69000000)
         GROUP BY ROUND(latitud, 5), ROUND(longitud, 5)";
 
 $resultado = $con->query($sql);

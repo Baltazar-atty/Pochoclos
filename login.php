@@ -43,6 +43,8 @@ if ($usuario = $resultado->fetch_assoc()) {
     // Verificar contraseña encriptada
     if (password_verify($password, $usuario['password'])) {
 
+        session_regenerate_id(true);
+
         // Guardar variables de sesión clave
         $_SESSION['usuario_id'] = $usuario['id'];
         $_SESSION['nombre']     = $usuario['nombre'];

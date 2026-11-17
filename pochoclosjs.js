@@ -394,9 +394,10 @@ async function registrarVenta(evento) {
     return;
   }
 
+  const ubicacion = await obtenerUbicacionParaVenta();
   let registradas = 0;
   for (const [productoId, seleccion] of selecciones) {
-    const resultado = await enviarVentaBD(productoId, seleccion.cantidad);
+    const resultado = await enviarVentaBD(productoId, seleccion.cantidad, ubicacion);
     if (resultado.success) {
       productosSeleccionados.delete(productoId);
       document.querySelector(`#grid-productos .product-btn[data-value="${productoId}"]`)?.classList.remove('active');
@@ -405,25 +406,55 @@ async function registrarVenta(evento) {
   }
 
   renderizarProductosSeleccionados();
+  const avisoUbicacion = !ubicacion && registradas > 0
+    ? ' No se pudo obtener el GPS, así que estas ventas no aparecerán en el mapa de calor.'
+    : '';
   if (registradas === selecciones.length) {
-    alert(`Se registraron ${registradas} producto(s) correctamente.`);
+    alert(`Se registraron ${registradas} producto(s) correctamente.${avisoUbicacion}`);
   } else {
-    alert(`Se registraron ${registradas} de ${selecciones.length} productos. Los pendientes siguen seleccionados para reintentar.`);
+    alert(`Se registraron ${registradas} de ${selecciones.length} productos. Los pendientes siguen seleccionados para reintentar.${avisoUbicacion}`);
   }
   if (registradas > 0) cargarDatosVentas();
 }
 
-async function enviarVentaBD(productoId, cantidad) {
+function obtenerUbicacionParaVenta() {
+  if (ultimaCoordenada) return Promise.resolve({ ...ultimaCoordenada });
+  if (!navigator.geolocation) return Promise.resolve(null);
+
+  return new Promise(resolve => {
+    navigator.geolocation.getCurrentPosition(
+      posicion => resolve({
+        latitud: posicion.coords.latitude,
+        longitud: posicion.coords.longitude
+      }),
+      () => resolve(null),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 10000 }
+    );
+  });
+}
+
+async function enviarVentaBD(productoId, cantidad, ubicacion) {
   try {
     const res = await fetch('ventas.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ producto_id: productoId, cantidad: cantidad, latitud: -36.53, longitud: -56.69 })
+      body: JSON.stringify({
+        producto_id: productoId,
+        cantidad,
+        latitud: ubicacion?.latitud ?? null,
+        longitud: ubicacion?.longitud ?? null
+      })
     });
 
     const data = await res.json();
-    return { success: Boolean(data.success) };
-  } catch (err) {
+    if (!res.ok || !data.success) {
+      alert(data.message || 'No se pudo registrar la venta.');
+      return { success: false };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('Error al registrar venta:', error);
+    alert('No se pudo conectar con el servidor para registrar la venta.');
     return { success: false };
   }
 }
@@ -549,7 +580,7 @@ async function enviarUbicacionActual() {
   }
 }
 
-function detenerSeguimientoUbicacion() {
+function detenerSeguimientoUbicacion(limpiarServidor = true) {
   if (seguimientoUbicacionId !== null) {
     navigator.geolocation.clearWatch(seguimientoUbicacionId);
     seguimientoUbicacionId = null;
@@ -565,7 +596,7 @@ function detenerSeguimientoUbicacion() {
   botonDetener?.classList.add('hidden');
   if (estado) estado.textContent = 'Ubicación no compartida.';
 
-  if (usuarioSesion && usuarioSesion.rol === 'empleado') {
+  if (limpiarServidor && usuarioSesion && usuarioSesion.rol === 'empleado') {
     fetch('ubicaciones_vendedores.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -625,6 +656,8 @@ function activarPanel(rol, nombre) {
   if (rol === 'admin') {
     labelUser.textContent = `👑 Admin: ${nombre}`;
     document.getElementById('vista-admin').classList.remove('hidden');
+    const mapaCalor = document.getElementById('iframe-mapa-calor');
+    mapaCalor.src = mapaCalor.dataset.src;
     renderizarEmpleados();
   } else {
     labelUser.textContent = `🛒 Vendedor: ${nombre}`;
@@ -633,9 +666,21 @@ function activarPanel(rol, nombre) {
   }
 }
 
-function cerrarSesion() {
-  detenerSeguimientoUbicacion();
+async function cerrarSesion() {
+  detenerSeguimientoUbicacion(false);
+  try {
+    const respuesta = await fetch('logout.php', { method: 'POST' });
+    const datos = await respuesta.json();
+    if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudo cerrar la sesión.');
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    alert('No se pudo cerrar la sesión con el servidor. Intentá nuevamente.');
+    return;
+  }
+
   usuarioSesion = null;
+  const mapaCalor = document.getElementById('iframe-mapa-calor');
+  mapaCalor.src = 'about:blank';
   document.getElementById('vista-admin').classList.add('hidden');
   document.getElementById('vista-empleado').classList.add('hidden');
   document.getElementById('label-usuario').classList.add('hidden');
