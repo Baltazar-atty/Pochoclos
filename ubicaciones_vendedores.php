@@ -3,6 +3,7 @@ session_start();
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
 
+define('JSON_API_REQUEST', true);
 require_once 'conexion.php';
 
 $metodo = $_SERVER['REQUEST_METHOD'];

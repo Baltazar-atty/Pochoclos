@@ -541,7 +541,8 @@ async function enviarUbicacionActual() {
     try {
       datos = JSON.parse(textoRespuesta);
     } catch {
-      throw new Error(`El servidor devolvió una respuesta inesperada (HTTP ${respuesta.status}). Verificá que el sitio esté servido por Apache/PHP y que la tabla de ubicaciones esté instalada.`);
+      const detalle = textoRespuesta.trim().replace(/\s+/g, ' ').slice(0, 180);
+      throw new Error(`Respuesta no válida del servidor (HTTP ${respuesta.status})${detalle ? `: ${detalle}` : '.'}`);
     }
     if (!respuesta.ok || !datos.success) {
       throw new Error(datos.message || `El servidor rechazó la ubicación (HTTP ${respuesta.status}).`);
