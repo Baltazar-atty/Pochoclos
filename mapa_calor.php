@@ -8,6 +8,19 @@ if (($_SESSION['rol'] ?? null) !== 'admin') {
 
 require_once 'conexion.php';
 
+$periodos = ['hoy', '3', '7', 'todas'];
+$periodo = $_GET['periodo'] ?? '7';
+if (!in_array($periodo, $periodos, true)) {
+    $periodo = '7';
+}
+
+$filtroFecha = match ($periodo) {
+    'hoy' => ' AND DATE(fecha_venta) = CURDATE()',
+    '3' => ' AND fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 2 DAY)',
+    '7' => ' AND fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)',
+    default => ''
+};
+
 $ventas = [];
 $sql = "SELECT ROUND(latitud, 5) AS latitud,
                ROUND(longitud, 5) AS longitud,
@@ -16,6 +29,7 @@ $sql = "SELECT ROUND(latitud, 5) AS latitud,
         WHERE latitud IS NOT NULL
           AND longitud IS NOT NULL
           AND NOT (latitud = -36.53000000 AND longitud = -56.69000000)
+          $filtroFecha
         GROUP BY ROUND(latitud, 5), ROUND(longitud, 5)";
 $resultado = $con->query($sql);
 
@@ -43,12 +57,25 @@ $centro = count($ventas) > 0
     <title>Mapa de calor</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
-        html, body, #mapa { width: 100%; height: 100%; margin: 0; }
-        body { font-family: Arial, sans-serif; }
+        html, body { width: 100%; min-height: 100%; margin: 0; }
+        body { font-family: Arial, sans-serif; display: flex; flex-direction: column; }
+        .filtros { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px; background: #fff; }
+        .filtros label { color: #475569; font-size: 0.9rem; font-weight: 600; }
+        .filtros select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; }
+        #mapa { width: 100%; height: calc(100vh - 48px); min-height: 300px; }
         .mensaje { padding: 25px; text-align: center; color: #64748b; }
     </style>
 </head>
 <body>
+    <form class="filtros" method="get">
+        <label for="filtro-periodo">Mostrar ventas:</label>
+        <select id="filtro-periodo" name="periodo" onchange="this.form.submit()">
+            <option value="hoy" <?= $periodo === 'hoy' ? 'selected' : '' ?>>Hoy</option>
+            <option value="3" <?= $periodo === '3' ? 'selected' : '' ?>>Últimos 3 días</option>
+            <option value="7" <?= $periodo === '7' ? 'selected' : '' ?>>Últimos 7 días</option>
+            <option value="todas" <?= $periodo === 'todas' ? 'selected' : '' ?>>Todas</option>
+        </select>
+    </form>
     <div id="mapa"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>

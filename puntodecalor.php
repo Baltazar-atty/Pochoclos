@@ -3,6 +3,19 @@
 session_start();
 require_once 'conexion.php';
 
+$periodos = ['hoy', '3', '7', 'todas'];
+$periodo = $_GET['periodo'] ?? '7';
+if (!in_array($periodo, $periodos, true)) {
+    $periodo = '7';
+}
+
+$filtroFecha = match ($periodo) {
+    'hoy' => ' AND DATE(fecha_venta) = CURDATE()',
+    '3' => ' AND fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 2 DAY)',
+    '7' => ' AND fecha_venta >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)',
+    default => ''
+};
+
 // Solo permite acceder al administrador
 if (
     !isset($_SESSION['usuario_id']) ||
@@ -21,6 +34,7 @@ $sql = "SELECT
         FROM ventas
         WHERE latitud IS NOT NULL
         AND longitud IS NOT NULL
+        $filtroFecha
         AND NOT (latitud = -36.53000000 AND longitud = -56.69000000)
         GROUP BY ROUND(latitud, 5), ROUND(longitud, 5)";
 
@@ -230,6 +244,16 @@ header h1 {
         <p>
             Cada venta suma intensidad en el lugar donde fue realizada.
         </p>
+
+        <form method="get" style="margin-bottom: 15px;">
+            <label for="filtro-periodo">Mostrar ventas:</label>
+            <select id="filtro-periodo" name="periodo" onchange="this.form.submit()">
+                <option value="hoy" <?= $periodo === 'hoy' ? 'selected' : '' ?>>Hoy</option>
+                <option value="3" <?= $periodo === '3' ? 'selected' : '' ?>>Últimos 3 días</option>
+                <option value="7" <?= $periodo === '7' ? 'selected' : '' ?>>Últimos 7 días</option>
+                <option value="todas" <?= $periodo === 'todas' ? 'selected' : '' ?>>Todas</option>
+            </select>
+        </form>
 
         <div id="mapa"></div>
 
