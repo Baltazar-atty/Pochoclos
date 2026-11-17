@@ -78,23 +78,52 @@ header::after {
 }
 
 .nav-brand {
-  font-size: 2rem;
-  font-weight: 800;
+  min-width: 0;
+  font-family: 'Fredoka', 'Trebuchet MS', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 600;
   color: var(--red-pop);
-  text-shadow: 2px 2px 0px var(--yellow-pop);
-  letter-spacing: -0.5px;
+  text-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   user-select: none;
   text-align: left;
 }
 
+.nav-brand > span {
+  font-family: 'Fredoka', 'Trebuchet MS', sans-serif;
+}
+
 .popcorn-interactive {
   cursor: pointer;
-  display: inline-block;
+  display: block;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   transition: transform 0.2s ease;
+}
+
+.popcorn-interactive img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.08);
 }
 
 .popcorn-interactive:hover {
   transform: scale(1.25) rotate(12deg);
+}
+
+.popcorn-interactive:focus-visible {
+  outline: 3px solid var(--yellow-pop);
+  outline-offset: 3px;
 }
 
 .btn-login {
@@ -110,9 +139,93 @@ header::after {
   transition: all 0.2s ease;
 }
 
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.instagram-link {
+  display: block;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  line-height: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  transform-origin: center;
+}
+
+.instagram-link img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.instagram-link:hover {
+  animation: instagram-float 650ms ease-in-out infinite alternate;
+}
+
+.instagram-link:active {
+  transform: scale(0.94) rotate(1deg);
+  animation: none;
+}
+
+@keyframes instagram-float {
+  from { transform: translateY(0) rotate(0); }
+  to { transform: translateY(-4px) rotate(-2deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .instagram-link:hover {
+    animation: none;
+    transform: translateY(-2px);
+  }
+}
+
+.instagram-link:focus-visible {
+  outline: 3px solid var(--yellow-pop);
+  outline-offset: 3px;
+}
+
 .btn-login:hover {
   transform: scale(1.06);
   box-shadow: 0 8px 22px rgba(255, 42, 95, 0.4);
+}
+
+@media (max-width: 620px) {
+  header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .nav-brand {
+    font-size: 1.35rem;
+  }
+
+  .popcorn-interactive {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .nav-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 18px;
+  }
+
+  .instagram-link {
+    width: 36px;
+    height: 36px;
+  }
+
+  .btn-login {
+    padding: 9px 16px;
+  }
 }
 
 /* ESTRUCTURA LIBRE DE PANELES */
@@ -152,159 +265,75 @@ main, section {
   color: var(--red-pop);
 }
 
-.chart-heading {
+.locations-intro {
+  margin-bottom: 18px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.vendors-map {
+  width: 100%;
+  height: 360px;
+  border: 2px solid var(--yellow-pop);
+  border-radius: 8px;
+  z-index: 0;
+}
+
+.map-legend {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
-.chart-icon {
-  height: 25px;
+.map-legend span {
   display: inline-flex;
-  align-items: flex-end;
-  gap: 3px;
+  align-items: center;
+  gap: 6px;
 }
 
-.chart-icon span {
-  display: block;
-  width: 5px;
-  border-radius: 2px 2px 0 0;
+.map-legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
 }
 
-.chart-icon span:nth-child(1) {
-  height: 13px;
-  background: #16a34a;
-}
-
-.chart-icon span:nth-child(2) {
-  height: 21px;
-  background: #ef4444;
-}
-
-.chart-icon span:nth-child(3) {
-  height: 17px;
+.map-legend-cart {
   background: #2563eb;
 }
 
-.location-summary {
-  padding: 12px;
+.map-legend-live {
+  background: #fb7185;
+  border: 2px solid #e11d48;
+}
+
+.map-status,
+.sharing-status {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.location-sharing {
+  margin-bottom: 20px;
+  padding: 14px;
   border: 1px solid #e2e8f0;
-  border-radius: 4px;
+  border-radius: 8px;
   background: #f8fafc;
 }
 
-.location-title {
-  margin-bottom: 4px;
-  color: #475569;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-.location-address {
-  color: #64748b;
-  font-size: 0.88rem;
-}
-
-.location-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 6px;
-  color: #15803d;
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #22c55e;
-}
-
-.progress-bar-container {
-  width: 100%;
-  max-width: 420px;
-  height: 26px;
-  background: linear-gradient(180deg, #fff1f5, #ffe6ef);
-  border: 3px solid var(--yellow-pop);
-  border-radius: 4px;
-  overflow: hidden;
-  margin: 10px auto 12px;
-  box-shadow: inset 0 2px 10px rgba(255, 42, 95, 0.08);
-}
-
-.progress-bar {
-  height: 100%;
-  width: 0;
-  min-width: 46px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 10px;
-  background: linear-gradient(90deg, #ff5d8f 0%, var(--red-pop) 45%, #ff9ab1 100%);
-  border-radius: 4px;
-  color: var(--white);
-  font-size: 0.68rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
-  transition: width 0.5s ease;
-  box-shadow: inset 0 0 16px rgba(255,255,255,0.18), 0 0 18px rgba(255, 42, 95, 0.18);
-  white-space: nowrap;
-}
-
-/* GRÁFICO DE BARRAS DE VENTAS DE 4 DÍAS */
-.chart-container {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-end;
-  height: 200px;
-  background-color: var(--yellow-light);
-  border: 3px solid var(--yellow-pop);
-  border-radius: 8px;
-  padding: 20px 15px 10px 15px;
-  margin: 20px 0;
-  gap: 15px;
-}
-
-.chart-bar-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  height: 100%;
-  justify-content: flex-end;
-}
-
-.chart-value {
+.location-sharing p:first-child {
+  margin-bottom: 10px;
+  color: var(--text-muted);
   font-size: 0.85rem;
-  font-weight: 800;
-  color: var(--red-pop);
-  margin-bottom: 6px;
 }
 
-.chart-bar {
-  width: 100%;
-  max-width: 50px;
-  background: var(--yellow-pop);
-  border-radius: 4px 4px 0 0;
-  transition: height 0.8s ease-in-out, background-color 0.3s;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-}
-
-.chart-bar-group.active .chart-bar {
-  background: linear-gradient(180deg, var(--red-pop), var(--red-pop-dark));
-  box-shadow: 0 6px 15px rgba(255, 42, 95, 0.35);
-}
-
-.chart-label {
-  margin-top: 10px;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: var(--text-main);
+.location-sharing .btn + .btn {
+  margin-left: 8px;
 }
 
 .product-grid {
@@ -348,6 +377,78 @@ main, section {
 .product-btn.active {
   border-color: var(--red-pop);
   background: var(--yellow-light);
+}
+
+.selected-products-group {
+  margin-top: 15px;
+}
+
+.selected-products {
+  display: grid;
+  gap: 8px;
+}
+
+.selected-products-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.selected-product {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 88px 32px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid var(--yellow-pop);
+  border-radius: 4px;
+  background: var(--white);
+}
+
+.selected-product img {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.selected-product-name {
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.selected-product-quantity {
+  width: 100%;
+  min-width: 0;
+}
+
+.selected-product-remove {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--red-pop);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.selected-product-remove:hover {
+  background: var(--yellow-light);
+}
+
+@media (max-width: 420px) {
+  .selected-product {
+    grid-template-columns: 40px minmax(0, 1fr) 72px 28px;
+    gap: 7px;
+    padding: 7px;
+  }
+
+  .selected-product img {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 /* FORMULARIOS Y SELECTORES */

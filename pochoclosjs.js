@@ -1,7 +1,14 @@
 let usuarioSesion = null;
 let calificacionActual = 5;
 let productosDisponibles = [];
+const productosSeleccionados = new Map();
 let anchoFranjasCalculado = 0;
+let mapaVendedores = null;
+let capaVendedores = null;
+let seguimientoUbicacionId = null;
+let intervaloEnvioUbicacion = null;
+let ultimaCoordenada = null;
+let envioUbicacionEnCurso = false;
 
 function ajustarFranjasFondo() {
   const ancho = document.documentElement.clientWidth;
@@ -257,34 +264,14 @@ async function cargarDatosVentas() {
     const res = await fetch('ventas.php');
     const data = await res.json();
 
-    if (data.success) {
-      productosDisponibles = data.productos || [];
-      const totalMostrar = Number(data.total_vendidas) || 0;
-      actualizarBarraPublica(totalMostrar);
+    if (!data.success) throw new Error('No se pudieron cargar los productos.');
+    productosDisponibles = data.productos || [];
 
-      if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
-        renderizarBotoneraProductos();
-      }
-    } else {
-      actualizarBarraPublica(0);
+    if (usuarioSesion && (usuarioSesion.rol === 'empleado' || usuarioSesion.rol === 'vendedor')) {
+      renderizarBotoneraProductos();
     }
   } catch (err) {
-    console.error('Error al cargar ventas:', err);
-    actualizarBarraPublica(0);
-  }
-}
-
-function actualizarBarraPublica(totalVendidas) {
-  const meta = 100;
-  const porcentaje = Math.min(Math.round((totalVendidas / meta) * 100), 100);
-
-  const elTotal = document.getElementById('total-vendidas');
-  const elBarra = document.getElementById('barra-pochoclos');
-
-  if (elTotal) elTotal.textContent = totalVendidas;
-  if (elBarra) {
-    elBarra.style.width = `${porcentaje}%`;
-    elBarra.textContent = `${porcentaje}%`;
+    console.error('Error al cargar productos:', err);
   }
 }
 
@@ -297,7 +284,7 @@ function renderizarBotoneraProductos() {
     const nombre = prod.tipo === 'maletin' ? `Maletín ${prod.subtipo}` : prod.tipo;
     const imagen = obtenerImagenProducto(prod);
     grid.innerHTML += `
-      <div class="product-btn" data-value="${prod.id}" onclick="seleccionarProducto(${prod.id}, this)">
+      <div class="product-btn${productosSeleccionados.has(String(prod.id)) ? ' active' : ''}" data-value="${prod.id}" onclick="seleccionarProducto(${prod.id}, this)">
         <img src="${imagen}" alt="${nombre}" onerror="this.onerror=null; this.style.display='none';">
         <span>${nombre}</span>
         <small>$${prod.precio}</small>
@@ -316,29 +303,114 @@ function obtenerImagenProducto(producto) {
 }
 
 function seleccionarProducto(id, elemento) {
-  const inputProducto = document.getElementById('venta-producto');
-  if (inputProducto) inputProducto.value = id;
+  const productoId = String(id);
+  if (productosSeleccionados.has(productoId)) {
+    productosSeleccionados.delete(productoId);
+  } else {
+    const producto = productosDisponibles.find(prod => String(prod.id) === productoId);
+    if (!producto) return;
+    productosSeleccionados.set(productoId, { producto, cantidad: 1 });
+  }
 
-  document.querySelectorAll('#grid-productos .product-btn').forEach(boton => {
-    boton.classList.toggle('active', boton === elemento);
+  elemento.classList.toggle('active', productosSeleccionados.has(productoId));
+  renderizarProductosSeleccionados();
+}
+
+function renderizarProductosSeleccionados() {
+  const contenedor = document.getElementById('productos-seleccionados');
+  if (!contenedor) return;
+
+  contenedor.replaceChildren();
+  if (productosSeleccionados.size === 0) {
+    const vacio = document.createElement('p');
+    vacio.className = 'selected-products-empty';
+    vacio.textContent = 'Todavía no seleccionaste productos.';
+    contenedor.appendChild(vacio);
+    return;
+  }
+
+  productosSeleccionados.forEach(({ producto, cantidad }, productoId) => {
+    const nombre = producto.tipo === 'maletin' ? `Maletín ${producto.subtipo}` : producto.tipo;
+    const fila = document.createElement('div');
+    fila.className = 'selected-product';
+
+    const imagen = document.createElement('img');
+    imagen.src = obtenerImagenProducto(producto);
+    imagen.alt = nombre;
+    imagen.onerror = () => {
+      imagen.onerror = null;
+      imagen.style.visibility = 'hidden';
+    };
+
+    const etiqueta = document.createElement('span');
+    etiqueta.className = 'selected-product-name';
+    etiqueta.textContent = nombre;
+
+    const cantidadInput = document.createElement('input');
+    cantidadInput.type = 'number';
+    cantidadInput.className = 'form-control selected-product-quantity';
+    cantidadInput.min = '1';
+    cantidadInput.step = '1';
+    cantidadInput.value = cantidad;
+    cantidadInput.required = true;
+    cantidadInput.setAttribute('aria-label', `Unidades de ${nombre}`);
+    cantidadInput.addEventListener('change', () => {
+      const nuevaCantidad = Number(cantidadInput.value);
+      if (!Number.isInteger(nuevaCantidad) || nuevaCantidad < 1) {
+        cantidadInput.value = cantidad;
+        return;
+      }
+      productosSeleccionados.get(productoId).cantidad = nuevaCantidad;
+    });
+
+    const quitar = document.createElement('button');
+    quitar.type = 'button';
+    quitar.className = 'selected-product-remove';
+    quitar.textContent = '×';
+    quitar.title = `Quitar ${nombre}`;
+    quitar.setAttribute('aria-label', `Quitar ${nombre}`);
+    quitar.addEventListener('click', () => {
+      productosSeleccionados.delete(productoId);
+      document.querySelector(`#grid-productos .product-btn[data-value="${productoId}"]`)?.classList.remove('active');
+      renderizarProductosSeleccionados();
+    });
+
+    fila.append(imagen, etiqueta, cantidadInput, quitar);
+    contenedor.appendChild(fila);
   });
 }
 
 async function registrarVenta(evento) {
   evento.preventDefault();
 
-  const productoId = document.getElementById('venta-producto').value;
-  const cantidad = Number(document.getElementById('venta-cantidad').value);
-  if (!productoId) {
-    alert('Seleccioná un producto antes de confirmar la venta.');
-    return;
-  }
-  if (!Number.isInteger(cantidad) || cantidad < 1) {
-    alert('Ingresá una cantidad válida.');
+  if (productosSeleccionados.size === 0) {
+    alert('Seleccioná al menos un producto antes de confirmar la venta.');
     return;
   }
 
-  await enviarVentaBD(productoId, cantidad);
+  const selecciones = Array.from(productosSeleccionados.entries());
+  if (selecciones.some(([, seleccion]) => !Number.isInteger(seleccion.cantidad) || seleccion.cantidad < 1)) {
+    alert('Cada producto debe tener una cantidad válida de 1 o más.');
+    return;
+  }
+
+  let registradas = 0;
+  for (const [productoId, seleccion] of selecciones) {
+    const resultado = await enviarVentaBD(productoId, seleccion.cantidad);
+    if (resultado.success) {
+      productosSeleccionados.delete(productoId);
+      document.querySelector(`#grid-productos .product-btn[data-value="${productoId}"]`)?.classList.remove('active');
+      registradas++;
+    }
+  }
+
+  renderizarProductosSeleccionados();
+  if (registradas === selecciones.length) {
+    alert(`Se registraron ${registradas} producto(s) correctamente.`);
+  } else {
+    alert(`Se registraron ${registradas} de ${selecciones.length} productos. Los pendientes siguen seleccionados para reintentar.`);
+  }
+  if (registradas > 0) cargarDatosVentas();
 }
 
 async function enviarVentaBD(productoId, cantidad) {
@@ -350,56 +422,160 @@ async function enviarVentaBD(productoId, cantidad) {
     });
 
     const data = await res.json();
-    alert(data.message);
-
-    if (data.success) {
-      cargarDatosVentas();
-    }
+    return { success: Boolean(data.success) };
   } catch (err) {
-    alert('Error al registrar la venta.');
+    return { success: false };
   }
 }
 
-let carritosCargados = false;
+function inicializarMapaVendedores() {
+  const contenedor = document.getElementById('mapa-vendedores');
+  const estado = document.getElementById('estado-mapa-vendedores');
+  if (!contenedor || !estado) return;
+  if (!window.L) {
+    estado.textContent = 'No se pudo cargar el mapa.';
+    return;
+  }
 
-async function cargarGraficoVentas() {
-  const selector = document.getElementById('filtro-carrito-grafico');
-  const contenedor = document.getElementById('chart-5-dias');
-  if (!contenedor) return;
+  mapaVendedores = L.map(contenedor).setView([-36.54, -56.69], 13);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(mapaVendedores);
+  capaVendedores = L.layerGroup().addTo(mapaVendedores);
 
-  const carritoId = selector ? selector.value : 'todos';
+  cargarUbicacionesPublicas();
+  window.setInterval(cargarUbicacionesPublicas, 15000);
+}
+
+async function cargarUbicacionesPublicas() {
+  const estado = document.getElementById('estado-mapa-vendedores');
+  if (!mapaVendedores || !capaVendedores || !estado) return;
 
   try {
-    const respuesta = await fetch(`estadisticas_ventas.php?carrito_id=${carritoId}`);
+    const respuesta = await fetch('ubicaciones_vendedores.php', { cache: 'no-store' });
     const datos = await respuesta.json();
-    if (!datos.success) throw new Error('No se pudieron cargar las ventas.');
+    if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudieron cargar las ubicaciones.');
 
-    if (selector && !carritosCargados) {
-      selector.innerHTML = '<option value="todos">Todos los carritos</option>';
-      datos.carritos.forEach(carrito => {
-        const opcion = document.createElement('option');
-        opcion.value = carrito.id;
-        opcion.textContent = `${carrito.nombre} (${carrito.ubicacion})`;
-        selector.appendChild(opcion);
-      });
-      carritosCargados = true;
-    }
-
-    contenedor.innerHTML = '';
-    datos.datos.forEach(dia => {
-      const porcentaje = dia.total === 0 ? 8 : Math.round((dia.total / datos.max_ventas) * 100);
-      const grupo = document.createElement('div');
-      grupo.className = `chart-bar-group${dia.es_hoy ? ' active' : ''}`;
-      grupo.innerHTML = `
-        <span class="chart-value">${dia.total}</span>
-        <div class="chart-bar" style="height: ${porcentaje}%;"></div>
-        <span class="chart-label">${dia.etiqueta}</span>
-      `;
-      contenedor.appendChild(grupo);
+    capaVendedores.clearLayers();
+    datos.carritos.forEach(carrito => {
+      const marcador = L.marker([carrito.latitud, carrito.longitud]);
+      const contenido = document.createElement('span');
+      contenido.textContent = `${carrito.nombre} · zona de referencia`;
+      marcador.bindPopup(contenido);
+      capaVendedores.addLayer(marcador);
     });
+
+    datos.zonas.forEach(zona => {
+      const circulo = L.circle([zona.latitud, zona.longitud], {
+        radius: 700,
+        color: '#e11d48',
+        fillColor: '#fb7185',
+        fillOpacity: 0.35,
+        weight: 2
+      }).bindPopup('Vendedor compartiendo ubicación · zona aproximada');
+      capaVendedores.addLayer(circulo);
+    });
+
+    estado.textContent = datos.zonas.length
+      ? 'Se muestran las zonas de referencia y las ubicaciones aproximadas en vivo.'
+      : 'Se muestran las zonas de referencia. No hay vendedores compartiendo su ubicación en vivo.';
   } catch (error) {
-    console.error('Error al cargar el gráfico de ventas:', error);
-    contenedor.innerHTML = '<p style="margin: auto; color: var(--red-pop); font-weight: 800;">No se pudieron cargar las ventas.</p>';
+    console.error('Error al cargar las ubicaciones públicas:', error);
+    estado.textContent = 'No se pudieron cargar las ubicaciones. Intentaremos nuevamente.';
+  }
+}
+
+function iniciarSeguimientoUbicacion() {
+  if (!usuarioSesion || usuarioSesion.rol !== 'empleado') return;
+
+  const estado = document.getElementById('estado-ubicacion-vendedor');
+  const botonCompartir = document.getElementById('btn-compartir-ubicacion');
+  const botonDetener = document.getElementById('btn-detener-ubicacion');
+  if (!navigator.geolocation) {
+    estado.textContent = 'Este navegador no permite compartir la ubicación.';
+    return;
+  }
+  if (seguimientoUbicacionId !== null) return;
+
+  ultimaCoordenada = null;
+  estado.textContent = 'Esperando permiso y ubicación del dispositivo...';
+  seguimientoUbicacionId = navigator.geolocation.watchPosition(posicion => {
+    ultimaCoordenada = {
+      latitud: posicion.coords.latitude,
+      longitud: posicion.coords.longitude
+    };
+    enviarUbicacionActual();
+  }, error => {
+    window.clearInterval(intervaloEnvioUbicacion);
+    intervaloEnvioUbicacion = null;
+    seguimientoUbicacionId = null;
+    estado.textContent = error.code === error.PERMISSION_DENIED
+      ? 'No se otorgó permiso para compartir la ubicación.'
+      : 'No se pudo obtener la ubicación del dispositivo.';
+    botonCompartir.classList.remove('hidden');
+    botonDetener.classList.add('hidden');
+  }, {
+    enableHighAccuracy: false,
+    maximumAge: 10000,
+    timeout: 20000
+  });
+  intervaloEnvioUbicacion = window.setInterval(enviarUbicacionActual, 15000);
+
+  botonCompartir.classList.add('hidden');
+  botonDetener.classList.remove('hidden');
+}
+
+async function enviarUbicacionActual() {
+  if (!ultimaCoordenada || envioUbicacionEnCurso || !usuarioSesion || usuarioSesion.rol !== 'empleado') return;
+
+  envioUbicacionEnCurso = true;
+  try {
+    const respuesta = await fetch('ubicaciones_vendedores.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'actualizar', ...ultimaCoordenada })
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudo compartir la ubicación.');
+
+    document.getElementById('estado-ubicacion-vendedor').textContent =
+      'Compartiendo tu zona aproximada con los visitantes.';
+    cargarUbicacionesPublicas();
+  } catch (error) {
+    console.error('Error al compartir la ubicación:', error);
+    document.getElementById('estado-ubicacion-vendedor').textContent =
+      'No se pudo compartir la ubicación. Revisá tu conexión e intentá nuevamente.';
+  } finally {
+    envioUbicacionEnCurso = false;
+  }
+}
+
+function detenerSeguimientoUbicacion() {
+  if (seguimientoUbicacionId !== null) {
+    navigator.geolocation.clearWatch(seguimientoUbicacionId);
+    seguimientoUbicacionId = null;
+  }
+  window.clearInterval(intervaloEnvioUbicacion);
+  intervaloEnvioUbicacion = null;
+  ultimaCoordenada = null;
+
+  const botonCompartir = document.getElementById('btn-compartir-ubicacion');
+  const botonDetener = document.getElementById('btn-detener-ubicacion');
+  const estado = document.getElementById('estado-ubicacion-vendedor');
+  botonCompartir?.classList.remove('hidden');
+  botonDetener?.classList.add('hidden');
+  if (estado) estado.textContent = 'Ubicación no compartida.';
+
+  if (usuarioSesion && usuarioSesion.rol === 'empleado') {
+    fetch('ubicaciones_vendedores.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accion: 'detener' }),
+      keepalive: true
+    }).then(respuesta => {
+      if (!respuesta.ok) throw new Error('No se pudo detener el seguimiento en el servidor.');
+    }).catch(error => console.error('Error al detener el seguimiento:', error));
   }
 }
 
@@ -460,6 +636,7 @@ function activarPanel(rol, nombre) {
 }
 
 function cerrarSesion() {
+  detenerSeguimientoUbicacion();
   usuarioSesion = null;
   document.getElementById('vista-admin').classList.add('hidden');
   document.getElementById('vista-empleado').classList.add('hidden');
@@ -468,6 +645,7 @@ function cerrarSesion() {
 
   document.getElementById('vista-publica').classList.remove('hidden');
   document.getElementById('btn-abrir-login').classList.remove('hidden');
+  window.requestAnimationFrame(() => mapaVendedores?.invalidateSize());
 }
 
 // 5. GESTIÓN DE EMPLEADOS (ADMIN)
@@ -558,7 +736,7 @@ async function eliminarEmpleado(id) {
 
 // EFECTO POCHOCLOS VOLADORES
 function explotarPochoclos(e) {
-  const rect = e.target.getBoundingClientRect();
+  const rect = e.currentTarget.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
 
@@ -587,6 +765,5 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('select.form-control').forEach(mejorarEsteticaSelect);
   seleccionarCalificacion(5);
   cargarComentarios();
-  cargarDatosVentas();
-  cargarGraficoVentas();
+  inicializarMapaVendedores();
 });

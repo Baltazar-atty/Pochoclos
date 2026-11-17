@@ -3,19 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pochoclos App</title>
+  <title>Pochoclos La Costa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
-  <link rel="stylesheet" href="pochoclos.css?v=20261110_15">
+  <link rel="stylesheet" href="pochoclos.css?v=20261117_23">
 </head>
 <body>
 
   <!-- ENCABEZADO CON TÍTULO CENTRADO Y LOGIN A LA DERECHA -->
   <header>
     <div class="nav-brand">
-      <span class="popcorn-interactive" onclick="explotarPochoclos(event)">🍿</span> Pochoclos App
+      <button type="button" class="popcorn-interactive" aria-label="Pochoclos La Costa, tocar para lanzar pochoclos" onclick="explotarPochoclos(event)">
+        <img src="img/logo%20pochoclos%20la%20costa.jpeg" alt="">
+      </button>
+      <span>Pochoclos La Costa</span>
     </div>
 
     <div class="nav-actions">
+      <a class="instagram-link" href="https://www.instagram.com/pochoclos.lacosta?cplk=MXFiOHJ2dGJxZHFvZg==" target="_blank" rel="noopener noreferrer" aria-label="Visitar Instagram de Pochoclos La Costa">
+        <img src="img/instagram.jpeg" alt="Pochoclos La Costa en Instagram">
+      </a>
       <button id="btn-abrir-login" class="btn-login" onclick="abrirModalLogin()">Iniciar Sesión</button>
       <span id="label-usuario" class="hidden" style="font-weight: 600; font-size: 0.9rem;"></span>
       <button id="btn-cerrar-sesion" class="btn btn-danger hidden" onclick="cerrarSesion()">Salir</button>
@@ -28,39 +38,16 @@
     <!-- 1. VISTA PÚBLICA -->
     <main id="vista-publica">
       
-      <!-- METAS Y VENTAS -->
+      <!-- UBICACIONES DE LOS CARRITOS -->
       <div class="card">
-        <h2 class="chart-heading"><span class="chart-icon" aria-hidden="true"><span></span><span></span><span></span></span>Pochoclos Vendidos Hoy</h2>
-        <p style="font-size: 0.85rem; color: #64748b;">Meta diaria: 100 unidades</p>
-        <div class="progress-bar-container">
-          <div id="barra-pochoclos" class="progress-bar" style="width: 0%;">0%</div>
+        <h2>📍 Encontrá a nuestros vendedores</h2>
+        <p class="locations-intro">Los marcadores muestran la zona de referencia de cada carrito. Las zonas de vendedores activos aparecen cuando comparten su ubicación.</p>
+        <div id="mapa-vendedores" class="vendors-map" role="application" aria-label="Mapa de zonas aproximadas de vendedores"></div>
+        <div class="map-legend" aria-label="Referencias del mapa">
+          <span><i class="map-legend-cart" aria-hidden="true"></i>Zona de referencia del carrito</span>
+          <span><i class="map-legend-live" aria-hidden="true"></i>Zona aproximada en vivo</span>
         </div>
-        <p style="margin-top: 8px; font-weight: 600;">
-          🍿 Llevamos vendidas: <span id="total-vendidas" style="color: #e11d48;">0</span> unidades.
-        </p>
-
-        <p style="font-weight: 700; color: var(--text-muted); margin: 20px 0 12px;">
-          Ventas de los últimos cinco días
-        </p>
-        <div class="form-group" style="max-width: 320px; margin: 0 auto 15px;">
-          <label for="filtro-carrito-grafico">Ver ventas de:</label>
-          <select id="filtro-carrito-grafico" class="form-control" onchange="cargarGraficoVentas()">
-            <option value="todos">Todos los carritos</option>
-          </select>
-        </div>
-        <div class="chart-container" id="chart-5-dias">
-          <p style="margin: auto; font-weight: 800; color: var(--text-muted);">Cargando gráfico...</p>
-        </div>
-      </div>
-
-      <!-- UBICACIÓN DEL CARRITO -->
-      <div class="card">
-        <h2>📍 Ubicación del Carrito</h2>
-        <div class="location-summary">
-          <h3 class="location-title">Plaza Central</h3>
-          <p class="location-address">Av. San Martín y Calle 3</p>
-          <p class="location-status"><span class="status-dot" aria-hidden="true"></span>Abierto ahora</p>
-        </div>
+        <p id="estado-mapa-vendedores" class="map-status" aria-live="polite">Cargando ubicaciones...</p>
       </div>
 
       <!-- SECCIÓN DE COMENTARIOS Y RESEÑAS -->
@@ -160,6 +147,12 @@
         <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
           Seleccioná un producto de la botonera y la cantidad para registrar la venta.
         </p>
+        <div class="location-sharing">
+          <p>Si compartís tu ubicación, los visitantes verán solo una zona aproximada (no tu punto exacto). El seguimiento se mantiene mientras tengas la sesión iniciada y esta página abierta. Necesitás permitir el acceso a la ubicación y usar HTTPS (excepto en localhost).</p>
+          <button id="btn-compartir-ubicacion" type="button" class="btn btn-primary" onclick="iniciarSeguimientoUbicacion()">Compartir mi ubicación</button>
+          <button id="btn-detener-ubicacion" type="button" class="btn btn-danger hidden" onclick="detenerSeguimientoUbicacion()">Dejar de compartir</button>
+          <p id="estado-ubicacion-vendedor" class="sharing-status" aria-live="polite">Ubicación no compartida.</p>
+        </div>
 
         <form onsubmit="registrarVenta(event)">
           <div class="form-group">
@@ -167,12 +160,13 @@
             <div id="grid-productos" class="product-grid">
               <!-- Carga dinámicamente desde la base de datos -->
             </div>
-            <input type="hidden" id="venta-producto" value="">
           </div>
 
-          <div class="form-group" style="margin-top: 15px;">
-            <label for="venta-cantidad">Cantidad:</label>
-            <input type="number" id="venta-cantidad" class="form-control" value="1" min="1" required>
+          <div class="form-group selected-products-group">
+            <label>Productos seleccionados:</label>
+            <div id="productos-seleccionados" class="selected-products" aria-live="polite">
+              <p class="selected-products-empty">Todavía no seleccionaste productos.</p>
+            </div>
           </div>
 
           <button type="submit" class="btn btn-primary btn-block">✅ Confirmar Venta</button>
@@ -209,6 +203,7 @@
   </div>
 
   <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
-  <script src="pochoclosjs.js?v=20261110_07"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="pochoclosjs.js?v=20261117_10"></script>
 </body>
 </html>
