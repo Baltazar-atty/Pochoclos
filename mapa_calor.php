@@ -1,274 +1,88 @@
 <?php
-
-include("conexion.php");
+require_once 'conexion.php';
 
 $ventas = [];
-
-$sql = "SELECT latitud, longitud, cantidad 
-        FROM ventas 
-        WHERE latitud IS NOT NULL 
-        AND longitud IS NOT NULL";
-
-$resultado = $conexion->query($sql);
+$sql = "SELECT ROUND(latitud, 5) AS latitud,
+               ROUND(longitud, 5) AS longitud,
+               SUM(cantidad) AS unidades
+        FROM ventas
+        WHERE latitud IS NOT NULL
+          AND longitud IS NOT NULL
+        GROUP BY ROUND(latitud, 5), ROUND(longitud, 5)";
+$resultado = $con->query($sql);
 
 if ($resultado) {
-
     while ($fila = $resultado->fetch_assoc()) {
-
         $ventas[] = [
-            "lat" => (float)$fila["latitud"],
-            "lng" => (float)$fila["longitud"],
-            "cantidad" => (int)$fila["cantidad"]
+            'lat' => (float) $fila['latitud'],
+            'lng' => (float) $fila['longitud'],
+            'cantidad' => (int) $fila['unidades']
         ];
-
     }
-
 }
 
-$conexion->close();
-
+$centro = count($ventas) > 0
+    ? [$ventas[0]['lat'], $ventas[0]['lng']]
+    : [-36.5417, -56.6880];
 ?>
-
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Mapa de calor - Ventas</title>
-
-    <!-- Leaflet -->
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-
+    <title>Mapa de calor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f4f4;
-        }
-
-        .header {
-            background: #222;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            margin: 0;
-        }
-
-        .contenedor {
-            width: 95%;
-            max-width: 1400px;
-            margin: 20px auto;
-        }
-
-        .panel {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .panel h2 {
-            margin-top: 0;
-        }
-
-        #mapa {
-            width: 100%;
-            height: 650px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
-        .leyenda {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-
-        .nivel {
-            display: inline-block;
-            margin-right: 20px;
-            margin-bottom: 5px;
-        }
-
-        .circulo {
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-        }
-
-        .bajo {
-            background: #00ff00;
-        }
-
-        .medio {
-            background: #ffff00;
-        }
-
-        .alto {
-            background: #ff0000;
-        }
-
+        html, body, #mapa { width: 100%; height: 100%; margin: 0; }
+        body { font-family: Arial, sans-serif; }
+        .mensaje { padding: 25px; text-align: center; color: #64748b; }
     </style>
-
 </head>
-
 <body>
-
-    <div class="header">
-
-        <h1>Mapa de calor de ventas</h1>
-
-        <p>
-            Zonas donde se realizaron más ventas de pochoclos
-        </p>
-
-    </div>
-
-    <div class="contenedor">
-
-        <div class="panel">
-
-            <h2>Mapa de ventas en la playa</h2>
-
-            <p>
-                Las zonas más intensas representan una mayor cantidad
-                de ventas.
-            </p>
-
-            <div id="mapa"></div>
-
-            <div class="leyenda">
-
-                <strong>Intensidad de ventas:</strong>
-
-                <div class="nivel">
-                    <span class="circulo bajo"></span>
-                    Baja
-                </div>
-
-                <div class="nivel">
-                    <span class="circulo medio"></span>
-                    Media
-                </div>
-
-                <div class="nivel">
-                    <span class="circulo alto"></span>
-                    Alta
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- Leaflet -->
-    <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
-
-    <!-- Plugin Heatmap -->
-    <script
-        src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js">
-    </script>
-
+    <div id="mapa"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script>
+        const ventas = <?= json_encode($ventas, JSON_UNESCAPED_UNICODE) ?>;
+        const mapa = L.map('mapa').setView(<?= json_encode($centro) ?>, 15);
 
-        // Ventas obtenidas desde PHP
-        const ventas = <?php echo json_encode($ventas); ?>;
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(mapa);
 
-        /*
-         * Convertimos las ventas al formato
-         * que necesita el mapa de calor.
-         */
-
-        const puntos = ventas.map(function(venta) {
-
-            return [
-                venta.lat,
-                venta.lng,
-                venta.cantidad
-            ];
-
-        });
-
-        /*
-         * Coordenadas iniciales.
-         *
-         * Estas coordenadas son solamente un ejemplo.
-         * Después podemos poner las coordenadas exactas
-         * de la playa donde trabajen los vendedores.
-         */
-
-        const mapa = L.map('mapa').setView(
-            [-36.5417, -56.6880],
-            15
-        );
-
-        /*
-         * Mapa de OpenStreetMap
-         */
-
-        L.tileLayer(
-            'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            {
-                attribution: '&copy; OpenStreetMap contributors'
-            }
-        ).addTo(mapa);
-
-        /*
-         * Crear mapa de calor.
-         */
+        const puntos = ventas.map(v => [v.lat, v.lng, v.cantidad]);
 
         if (puntos.length > 0) {
-
             L.heatLayer(puntos, {
-
-                radius: 35,
-
-                blur: 25,
-
-                maxZoom: 17,
-
-                max: 10,
-
+                radius: 38,
+                blur: 26,
+                maxZoom: 18,
+                max: Math.max(...ventas.map(v => v.cantidad)),
                 gradient: {
-                    0.2: 'blue',
-                    0.4: 'cyan',
-                    0.6: 'lime',
-                    0.8: 'yellow',
-                    1.0: 'red'
+                    0.2: '#22c55e',
+                    0.5: '#facc15',
+                    1.0: '#ef4444'
                 }
-
             }).addTo(mapa);
 
+            const limites = L.latLngBounds(puntos.map(p => [p[0], p[1]]));
+            mapa.fitBounds(limites, { padding: [35, 35], maxZoom: 16 });
+
+            ventas.forEach(v => {
+                L.circleMarker([v.lat, v.lng], {
+                    radius: 5,
+                    color: '#7f1d1d',
+                    fillColor: '#ffffff',
+                    fillOpacity: 0.9
+                }).bindPopup('<strong>Unidades: ' + v.cantidad + '</strong>').addTo(mapa);
+            });
         } else {
-
-            alert("Todavía no hay ventas con ubicación registrada.");
-
+            document.getElementById('mapa').innerHTML =
+                '<div class="mensaje">Todavía no hay ventas con ubicación GPS.</div>';
         }
 
+        setTimeout(() => mapa.invalidateSize(), 200);
     </script>
-
 </body>
-
 </html>
