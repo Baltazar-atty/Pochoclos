@@ -101,11 +101,19 @@ $stmt = $con->prepare(
      VALUES (?, ?, ?, UTC_TIMESTAMP())
      ON DUPLICATE KEY UPDATE latitud = VALUES(latitud), longitud = VALUES(longitud), actualizada_en = UTC_TIMESTAMP()"
 );
+if (!$stmt) {
+    error_log('No se pudo preparar la actualización de ubicación: ' . $con->error);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'No está disponible la tabla de ubicaciones. Importá ubicaciones_vendedores.sql en la base pochoclos_db.']);
+    exit;
+}
+
 $stmt->bind_param('idd', $usuarioId, $latitud, $longitud);
 
 if (!$stmt->execute()) {
+    error_log('No se pudo guardar la ubicación del vendedor: ' . $stmt->error);
     http_response_code(500);
-    echo json_encode(['success' => false, 'message' => 'No se pudo guardar la ubicación.']);
+    echo json_encode(['success' => false, 'message' => 'No se pudo guardar la ubicación. Revisá el error del servidor.']);
     exit;
 }
 

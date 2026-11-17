@@ -536,8 +536,16 @@ async function enviarUbicacionActual() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accion: 'actualizar', ...ultimaCoordenada })
     });
-    const datos = await respuesta.json();
-    if (!respuesta.ok || !datos.success) throw new Error(datos.message || 'No se pudo compartir la ubicación.');
+    const textoRespuesta = await respuesta.text();
+    let datos;
+    try {
+      datos = JSON.parse(textoRespuesta);
+    } catch {
+      throw new Error(`El servidor devolvió una respuesta inesperada (HTTP ${respuesta.status}). Verificá que el sitio esté servido por Apache/PHP y que la tabla de ubicaciones esté instalada.`);
+    }
+    if (!respuesta.ok || !datos.success) {
+      throw new Error(datos.message || `El servidor rechazó la ubicación (HTTP ${respuesta.status}).`);
+    }
 
     document.getElementById('estado-ubicacion-vendedor').textContent =
       'Compartiendo tu zona aproximada con los visitantes.';
@@ -545,7 +553,9 @@ async function enviarUbicacionActual() {
   } catch (error) {
     console.error('Error al compartir la ubicación:', error);
     document.getElementById('estado-ubicacion-vendedor').textContent =
-      'No se pudo compartir la ubicación. Revisá tu conexión e intentá nuevamente.';
+      error instanceof TypeError
+        ? 'No se pudo conectar con el servidor del sitio. Verificá que Apache esté funcionando y volvé a intentar.'
+        : error.message;
   } finally {
     envioUbicacionEnCurso = false;
   }
