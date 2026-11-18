@@ -659,6 +659,7 @@ function activarPanel(rol, nombre) {
     const mapaCalor = document.getElementById('iframe-mapa-calor');
     mapaCalor.src = mapaCalor.dataset.src;
     renderizarEmpleados();
+    renderizarInventario();
   } else {
     labelUser.textContent = `🛒 Vendedor: ${nombre}`;
     document.getElementById('vista-empleado').classList.remove('hidden');
@@ -721,6 +722,161 @@ async function renderizarEmpleados() {
     }
   } catch (err) {
     console.error('Error al cargar empleados:', err);
+  }
+}
+
+async function renderizarInventario() {
+  const lista = document.getElementById('lista-inventario');
+  const listaInsumos = document.getElementById('lista-insumos');
+  const estado = document.getElementById('estado-inventario');
+  if (!lista || !listaInsumos || !estado) return;
+
+  mostrarEstadoListaInventario(lista, 'Cargando productos...');
+  mostrarEstadoListaInventario(listaInsumos, 'Cargando materias primas...');
+  estado.textContent = '';
+
+  try {
+    const respuesta = await fetch('inventario.php');
+    const datos = await respuesta.json();
+    if (!respuesta.ok || !datos.success) {
+      throw new Error(datos.message || 'No se pudo cargar el inventario.');
+    }
+
+    if (datos.productos.length === 0) {
+      mostrarEstadoListaInventario(lista, 'No hay productos registrados.');
+    } else {
+      renderizarListaInventario(lista, datos.productos, 'producto');
+    }
+
+    if (datos.insumos.length === 0) {
+      mostrarEstadoListaInventario(listaInsumos, 'No hay materias primas registradas.');
+    } else {
+      renderizarListaInventario(listaInsumos, datos.insumos, 'insumo');
+    }
+  } catch (error) {
+    console.error('Error al cargar inventario:', error);
+    const mensaje = error.message || 'No se pudo cargar el inventario. Intentá nuevamente.';
+    mostrarEstadoListaInventario(lista, mensaje);
+    mostrarEstadoListaInventario(listaInsumos, mensaje);
+  }
+}
+
+function mostrarEstadoListaInventario(lista, mensaje) {
+  lista.replaceChildren();
+  const estado = document.createElement('p');
+  estado.textContent = mensaje;
+  lista.appendChild(estado);
+}
+
+function renderizarListaInventario(lista, elementos, tipo) {
+  lista.replaceChildren();
+  elementos.forEach(elemento => {
+    const nombre = tipo === 'producto'
+      ? (elemento.tipo === 'maletin' ? `Maletín ${elemento.subtipo}` : elemento.tipo)
+      : elemento.nombre;
+    const fila = document.createElement('form');
+    fila.className = 'inventory-item';
+    fila.addEventListener('submit', evento => guardarStock(evento, elemento.id, tipo));
+
+    const imagen = document.createElement('img');
+    imagen.src = tipo === 'producto' ? obtenerImagenProducto(elemento) : elemento.imagen;
+    imagen.alt = nombre;
+    imagen.onerror = () => {
+      imagen.onerror = null;
+      imagen.style.visibility = 'hidden';
+    };
+
+    const datosProducto = document.createElement('div');
+    datosProducto.className = 'inventory-product-details';
+    const etiqueta = document.createElement('strong');
+    etiqueta.textContent = nombre;
+    const unidad = tipo === 'insumo' ? elemento.unidad : 'unidades';
+    const stockActual = document.createElement('span');
+    stockActual.className = 'inventory-stock-value';
+    stockActual.textContent = `Stock: ${Number(elemento.stock)} ${unidad}`;
+    datosProducto.append(etiqueta, stockActual);
+
+    const cantidad = document.createElement('input');
+    cantidad.type = 'number';
+    cantidad.className = 'form-control inventory-quantity';
+    cantidad.min = '0';
+    cantidad.step = '1';
+    cantidad.max = '2147483647';
+    cantidad.value = Number(elemento.stock);
+    cantidad.required = true;
+    cantidad.setAttribute('aria-label', `Stock de ${nombre}`);
+    cantidad.hidden = true;
+
+    const modificar = document.createElement('button');
+    modificar.type = 'button';
+    modificar.className = 'btn btn-primary';
+    modificar.textContent = 'Modificar';
+    modificar.setAttribute('aria-label', `Modificar stock de ${nombre}`);
+    modificar.addEventListener('click', () => {
+      cantidad.hidden = false;
+      modificar.hidden = true;
+      guardar.hidden = false;
+      cancelar.hidden = false;
+      cantidad.focus();
+    });
+
+    const guardar = document.createElement('button');
+    guardar.type = 'submit';
+    guardar.className = 'btn btn-primary';
+    guardar.textContent = 'Guardar';
+    guardar.hidden = true;
+
+    const cancelar = document.createElement('button');
+    cancelar.type = 'button';
+    cancelar.className = 'btn btn-danger';
+    cancelar.textContent = 'Cancelar';
+    cancelar.hidden = true;
+    cancelar.addEventListener('click', () => {
+      cantidad.value = Number(elemento.stock);
+      cantidad.hidden = true;
+      modificar.hidden = false;
+      guardar.hidden = true;
+      cancelar.hidden = true;
+    });
+
+    fila.append(imagen, datosProducto, cantidad, modificar, guardar, cancelar);
+    lista.appendChild(fila);
+  });
+}
+
+async function guardarStock(evento, elementoId, tipo) {
+  evento.preventDefault();
+  const formulario = evento.currentTarget;
+  const cantidad = formulario.querySelector('input[type="number"]');
+  const estado = document.getElementById('estado-inventario');
+  const stock = Number(cantidad.value);
+  if (!Number.isInteger(stock) || stock < 0 || stock > 2147483647) {
+    estado.textContent = 'Ingresá una cantidad entera entre 0 y 2147483647.';
+    return;
+  }
+
+  const boton = formulario.querySelector('button[type="submit"]');
+  boton.disabled = true;
+  estado.textContent = 'Guardando cambios...';
+  try {
+    const respuesta = await fetch('inventario.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tipo === 'producto'
+        ? { producto_id: elementoId, stock }
+        : { insumo_id: elementoId, stock })
+    });
+    const datos = await respuesta.json();
+    if (!respuesta.ok || !datos.success) {
+      throw new Error(datos.message || 'No se pudo guardar el stock.');
+    }
+
+    await renderizarInventario();
+    estado.textContent = `Stock de ${datos.producto} actualizado correctamente.`;
+  } catch (error) {
+    console.error('Error al guardar stock:', error);
+    estado.textContent = error.message || 'No se pudo guardar el stock. Intentá nuevamente.';
+    boton.disabled = false;
   }
 }
 
