@@ -184,6 +184,56 @@ header h1 {
     margin-bottom: 15px;
 }
 
+.filtros-periodo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.filtros-periodo-titulo {
+    width: 100%;
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.filtro-periodo-opcion {
+    position: relative;
+}
+
+.filtro-periodo-opcion input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.filtro-periodo-opcion label {
+    display: block;
+    padding: 8px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: white;
+    color: #475569;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.filtro-periodo-opcion input:checked + label {
+    border-color: #e11d48;
+    background: #e11d48;
+    color: white;
+}
+
+.filtro-periodo-opcion input:focus-visible + label {
+    outline: 3px solid #fda4af;
+    outline-offset: 2px;
+}
+
 @media(max-width:600px) {
     #mapa {
         height: 500px;
@@ -245,14 +295,14 @@ header h1 {
             Cada venta suma intensidad en el lugar donde fue realizada.
         </p>
 
-        <form method="get" style="margin-bottom: 15px;">
-            <label for="filtro-periodo">Mostrar ventas:</label>
-            <select id="filtro-periodo" name="periodo" onchange="this.form.submit()">
-                <option value="hoy" <?= $periodo === 'hoy' ? 'selected' : '' ?>>Hoy</option>
-                <option value="3" <?= $periodo === '3' ? 'selected' : '' ?>>Últimos 3 días</option>
-                <option value="7" <?= $periodo === '7' ? 'selected' : '' ?>>Últimos 7 días</option>
-                <option value="todas" <?= $periodo === 'todas' ? 'selected' : '' ?>>Todas</option>
-            </select>
+        <form method="get" class="filtros-periodo" aria-label="Filtrar ventas por período">
+            <span class="filtros-periodo-titulo">Mostrar ventas:</span>
+            <?php foreach (['hoy' => 'Hoy', '3' => '3 días', '7' => '7 días', 'todas' => 'Todas'] as $valor => $etiqueta): ?>
+                <span class="filtro-periodo-opcion">
+                    <input type="radio" id="periodo-<?= $valor ?>" name="periodo" value="<?= $valor ?>" <?= (string)$periodo === (string)$valor ? 'checked' : '' ?> onchange="this.form.submit()">
+                    <label for="periodo-<?= $valor ?>"><?= $etiqueta ?></label>
+                </span>
+            <?php endforeach; ?>
         </form>
 
         <div id="mapa"></div>

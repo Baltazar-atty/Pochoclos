@@ -59,22 +59,26 @@ $centro = count($ventas) > 0
     <style>
         html, body { width: 100%; min-height: 100%; margin: 0; }
         body { font-family: Arial, sans-serif; display: flex; flex-direction: column; }
-        .filtros { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px; background: #fff; }
-        .filtros label { color: #475569; font-size: 0.9rem; font-weight: 600; }
-        .filtros select { padding: 7px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; }
+        .filtros { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 10px; background: #fff; }
+        .filtros-titulo { width: 100%; color: #475569; font-size: 0.9rem; font-weight: 600; text-align: center; }
+        .filtro-opcion { position: relative; }
+        .filtro-opcion input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+        .filtro-opcion label { display: block; padding: 8px 14px; border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; color: #475569; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: background .2s, color .2s, border-color .2s; }
+        .filtro-opcion input:checked + label { border-color: #e11d48; background: #e11d48; color: #fff; }
+        .filtro-opcion input:focus-visible + label { outline: 3px solid #fda4af; outline-offset: 2px; }
         #mapa { width: 100%; height: calc(100vh - 48px); min-height: 300px; }
         .mensaje { padding: 25px; text-align: center; color: #64748b; }
     </style>
 </head>
 <body>
-    <form class="filtros" method="get">
-        <label for="filtro-periodo">Mostrar ventas:</label>
-        <select id="filtro-periodo" name="periodo" onchange="this.form.submit()">
-            <option value="hoy" <?= $periodo === 'hoy' ? 'selected' : '' ?>>Hoy</option>
-            <option value="3" <?= $periodo === '3' ? 'selected' : '' ?>>Últimos 3 días</option>
-            <option value="7" <?= $periodo === '7' ? 'selected' : '' ?>>Últimos 7 días</option>
-            <option value="todas" <?= $periodo === 'todas' ? 'selected' : '' ?>>Todas</option>
-        </select>
+    <form class="filtros" method="get" aria-label="Filtrar ventas por período">
+        <span class="filtros-titulo">Mostrar ventas:</span>
+        <?php foreach (['hoy' => 'Hoy', '3' => '3 días', '7' => '7 días', 'todas' => 'Todas'] as $valor => $etiqueta): ?>
+            <span class="filtro-opcion">
+                <input type="radio" id="periodo-<?= $valor ?>" name="periodo" value="<?= $valor ?>" <?= (string)$periodo === (string)$valor ? 'checked' : '' ?> onchange="this.form.submit()">
+                <label for="periodo-<?= $valor ?>"><?= $etiqueta ?></label>
+            </span>
+        <?php endforeach; ?>
     </form>
     <div id="mapa"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
