@@ -685,6 +685,7 @@ function activarPanel(rol, nombre) {
     mapaCalor.src = mapaCalor.dataset.src;
     renderizarEmpleados();
     renderizarInventario();
+    cargarVentasAdmin();
   } else {
     labelUser.textContent = `🛒 Vendedor: ${nombre}`;
     document.getElementById('vista-empleado').classList.remove('hidden');
@@ -748,6 +749,165 @@ async function renderizarEmpleados() {
   } catch (err) {
     console.error('Error al cargar empleados:', err);
   }
+}
+
+async function cargarVentasAdmin(evento) {
+  evento?.preventDefault();
+
+  const estado = document.getElementById('estado-ventas-admin');
+  const selectorCarrito = document.getElementById('filtro-carrito-ventas');
+  const selectorFecha = document.getElementById('fecha-comparacion-ventas');
+  const boton = document.querySelector('.sales-filters button[type="submit"]');
+  if (!estado || !selectorCarrito || !selectorFecha) return;
+
+  estado.textContent = 'Cargando ventas...';
+  if (boton) boton.disabled = true;
+
+  try {
+    const parametros = new URLSearchParams({
+      accion: 'reporte_admin',
+      carrito_id: selectorCarrito.value || 'todos'
+    });
+    if (selectorFecha.value) parametros.set('fecha_comparacion', selectorFecha.value);
+
+    const respuesta = await fetch(`ventas.php?${parametros.toString()}`);
+    const datos = await respuesta.json();
+    if (!respuesta.ok || !datos.success) {
+      throw new Error(datos.message || 'No se pudieron cargar las ventas.');
+    }
+
+    const carritoActual = selectorCarrito.value || 'todos';
+    selectorCarrito.replaceChildren();
+    const opcionTodos = document.createElement('option');
+    opcionTodos.value = 'todos';
+    opcionTodos.textContent = 'Todos los carritos';
+    selectorCarrito.appendChild(opcionTodos);
+    datos.carritos.forEach(carrito => {
+      const opcion = document.createElement('option');
+      opcion.value = String(carrito.id);
+      opcion.textContent = carrito.nombre;
+      selectorCarrito.appendChild(opcion);
+    });
+    selectorCarrito.value = Array.from(selectorCarrito.options)
+      .some(opcion => opcion.value === carritoActual) ? carritoActual : 'todos';
+
+    selectorFecha.max = calcularFechaAnterior(datos.fecha_hoy);
+    selectorFecha.value = datos.fecha_comparacion;
+    document.getElementById('fecha-ventas-hoy').textContent = formatearFechaVentas(datos.fecha_hoy);
+    document.getElementById('fecha-ventas-comparacion').textContent = formatearFechaVentas(datos.fecha_comparacion);
+
+    renderizarResumenVentasAdmin(datos);
+    renderizarListaVentasAdmin('lista-ventas-hoy', datos.ventas_hoy);
+    renderizarListaVentasAdmin('lista-ventas-comparacion', datos.ventas_comparacion);
+    estado.textContent = '';
+  } catch (error) {
+    console.error('Error al cargar ventas del administrador:', error);
+    estado.textContent = error.message || 'No se pudieron cargar las ventas. Intentá nuevamente.';
+  } finally {
+    if (boton) boton.disabled = false;
+  }
+}
+
+function calcularFechaAnterior(fecha) {
+  const [anio, mes, dia] = fecha.split('-').map(Number);
+  const anterior = new Date(anio, mes - 1, dia);
+  anterior.setDate(anterior.getDate() - 1);
+  return `${anterior.getFullYear()}-${String(anterior.getMonth() + 1).padStart(2, '0')}-${String(anterior.getDate()).padStart(2, '0')}`;
+}
+
+function formatearFechaVentas(fecha) {
+  const [anio, mes, dia] = fecha.split('-').map(Number);
+  return new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date(anio, mes - 1, dia));
+}
+
+function renderizarResumenVentasAdmin(datos) {
+  const resumen = document.getElementById('resumen-ventas-admin');
+  if (!resumen) return;
+  resumen.replaceChildren();
+
+  [
+    { titulo: 'Hoy', valores: datos.resumen_hoy },
+    { titulo: 'Día comparado', valores: datos.resumen_comparacion }
+  ].forEach(({ titulo, valores }) => {
+    const tarjeta = document.createElement('article');
+    tarjeta.className = 'sales-summary-card';
+
+    const encabezado = document.createElement('span');
+    encabezado.className = 'sales-summary-label';
+    encabezado.textContent = titulo;
+
+    const unidades = document.createElement('strong');
+    unidades.className = 'sales-summary-units';
+    unidades.textContent = String(valores.unidades);
+
+    const detalle = document.createElement('span');
+    detalle.className = 'sales-summary-detail';
+    detalle.textContent = `${valores.unidades === 1 ? 'unidad' : 'unidades'} · ${valores.registros} ${valores.registros === 1 ? 'registro' : 'registros'}`;
+
+    tarjeta.append(encabezado, unidades, detalle);
+    resumen.appendChild(tarjeta);
+  });
+
+  const diferencia = datos.resumen_hoy.unidades - datos.resumen_comparacion.unidades;
+  const comparacion = document.createElement('p');
+  comparacion.className = `sales-summary-difference${diferencia > 0 ? ' is-up' : diferencia < 0 ? ' is-down' : ''}`;
+  const unidadesDiferencia = Math.abs(diferencia);
+  const verboDiferencia = unidadesDiferencia === 1 ? 'vendió' : 'vendieron';
+  comparacion.textContent = diferencia > 0
+    ? `Hoy se ${verboDiferencia} ${diferencia} ${unidadesDiferencia === 1 ? 'unidad' : 'unidades'} más.`
+    : diferencia < 0
+      ? `Hoy se ${verboDiferencia} ${unidadesDiferencia} ${unidadesDiferencia === 1 ? 'unidad' : 'unidades'} menos.`
+      : 'Se vendió la misma cantidad de unidades.';
+  resumen.appendChild(comparacion);
+}
+
+function renderizarListaVentasAdmin(idLista, ventas) {
+  const lista = document.getElementById(idLista);
+  if (!lista) return;
+  lista.replaceChildren();
+
+  if (ventas.length === 0) {
+    const vacio = document.createElement('p');
+    vacio.className = 'sales-empty-state';
+    vacio.textContent = 'No hay ventas registradas para esta fecha.';
+    lista.appendChild(vacio);
+    return;
+  }
+
+  ventas.forEach(venta => {
+    const tarjeta = document.createElement('article');
+    tarjeta.className = 'sales-record';
+
+    const principal = document.createElement('div');
+    principal.className = 'sales-record-main';
+
+    const producto = document.createElement('strong');
+    producto.textContent = venta.tipo === 'maletin'
+      ? `Maletín ${venta.subtipo || ''}`.trim()
+      : venta.tipo;
+
+    const cantidad = document.createElement('span');
+    cantidad.className = 'sales-record-quantity';
+    cantidad.textContent = `${venta.cantidad} ${venta.cantidad === 1 ? 'unidad' : 'unidades'}`;
+    principal.append(producto, cantidad);
+
+    const detalle = document.createElement('div');
+    detalle.className = 'sales-record-detail';
+
+    const hora = document.createElement('time');
+    hora.textContent = venta.hora;
+
+    const carrito = document.createElement('span');
+    carrito.textContent = venta.carrito_nombre;
+    detalle.append(hora, carrito);
+
+    tarjeta.append(principal, detalle);
+    lista.appendChild(tarjeta);
+  });
 }
 
 async function renderizarInventario() {

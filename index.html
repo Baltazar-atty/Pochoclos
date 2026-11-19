@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
-  <link rel="stylesheet" href="pochoclos.css?v=20261119_26">
+  <link rel="stylesheet" href="pochoclos.css?v=20261119_27">
 </head>
 <body>
 
@@ -135,6 +135,49 @@
         </ul>
       </div>
 
+      <div class="card sales-dashboard-card">
+        <h2>📊 Ventas del día</h2>
+        <p class="locations-intro">Revisá lo vendido hoy y comparalo con otra fecha.</p>
+
+        <form class="sales-filters" onsubmit="cargarVentasAdmin(event)">
+          <div class="sales-filter">
+            <label for="filtro-carrito-ventas">Carrito</label>
+            <select id="filtro-carrito-ventas" class="sales-filter-control">
+              <option value="todos">Todos los carritos</option>
+            </select>
+          </div>
+          <div class="sales-filter">
+            <label for="fecha-comparacion-ventas">Comparar con</label>
+            <input id="fecha-comparacion-ventas" class="sales-filter-control" type="date">
+          </div>
+          <button type="submit" class="btn btn-primary sales-filter-submit">Ver ventas</button>
+        </form>
+
+        <p id="estado-ventas-admin" class="sales-report-status" role="status" aria-live="polite"></p>
+        <div id="resumen-ventas-admin" class="sales-summary"></div>
+
+        <div class="sales-report-columns">
+          <section class="sales-day-panel" aria-labelledby="titulo-ventas-hoy">
+            <div class="sales-day-heading">
+              <h3 id="titulo-ventas-hoy">Ventas de hoy</h3>
+              <span id="fecha-ventas-hoy"></span>
+            </div>
+            <div id="lista-ventas-hoy" class="sales-record-list">
+              <p>Cargando ventas...</p>
+            </div>
+          </section>
+          <section class="sales-day-panel" aria-labelledby="titulo-ventas-comparacion">
+            <div class="sales-day-heading">
+              <h3 id="titulo-ventas-comparacion">Día comparado</h3>
+              <span id="fecha-ventas-comparacion"></span>
+            </div>
+            <div id="lista-ventas-comparacion" class="sales-record-list">
+              <p>Elegí una fecha para comparar.</p>
+            </div>
+          </section>
+        </div>
+      </div>
+
       <div class="card">
         <h2>📦 Control de stock</h2>
         <p class="locations-intro">Actualizá las unidades disponibles de cada producto. Las ventas descuentan el stock automáticamente.</p>
@@ -240,6 +283,6 @@
 
   <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="pochoclosjs.js?v=20261119_17"></script>
+  <script src="pochoclosjs.js?v=20261119_18"></script>
 </body>
 </html>
