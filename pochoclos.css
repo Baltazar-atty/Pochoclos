@@ -614,6 +614,73 @@ select.form-control option {
   border-radius: 4px;
 }
 
+.sale-notification {
+  position: fixed;
+  z-index: 1100;
+  bottom: 24px;
+  left: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 18px;
+  border: 2px solid #16803c;
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-main);
+  box-shadow: 0 8px 24px rgba(43, 9, 20, 0.2);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sale-notification[hidden] {
+  display: none;
+}
+
+.sale-notification.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sale-notification-check {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #16803c;
+  color: var(--white);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.sale-notification-content {
+  display: grid;
+  gap: 3px;
+}
+
+.sale-notification-content small {
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+@media (max-width: 480px) {
+  .sale-notification {
+    right: 16px;
+    bottom: 16px;
+    left: 16px;
+    max-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sale-notification {
+    transition: none;
+  }
+}
+
 /* SISTEMA DE CALIFICACIÓN POR POCHOCLOS */
 .rating-popcorns {
   display: flex;

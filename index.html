@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <!-- ESTILOS EXTERNOS EN POCHOCLOS.CSS -->
-  <link rel="stylesheet" href="pochoclos.css?v=20261117_25">
+  <link rel="stylesheet" href="pochoclos.css?v=20261119_26">
 </head>
 <body>
 
@@ -190,6 +190,14 @@
 
   </div>
 
+  <div id="notificacion-venta" class="sale-notification" role="status" aria-live="polite" aria-atomic="true" hidden>
+    <span class="sale-notification-check" aria-hidden="true">✓</span>
+    <span class="sale-notification-content">
+      <strong>Venta registrada</strong>
+      <small id="detalle-notificacion-venta"></small>
+    </span>
+  </div>
+
   <!-- MODAL DE LOGIN -->
   <div id="modal-login" class="modal-overlay hidden">
     <div class="modal-card">
@@ -218,6 +226,6 @@
 
   <!-- JAVASCRIPT PRINCIPAL DE LA APLICACIÓN -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="pochoclosjs.js?v=20261117_16"></script>
+  <script src="pochoclosjs.js?v=20261119_17"></script>
 </body>
 </html>

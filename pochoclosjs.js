@@ -9,6 +9,8 @@ let seguimientoUbicacionId = null;
 let intervaloEnvioUbicacion = null;
 let ultimaCoordenada = null;
 let envioUbicacionEnCurso = false;
+let temporizadorNotificacionVenta = null;
+let temporizadorOcultarNotificacionVenta = null;
 
 function ajustarFranjasFondo() {
   const ancho = document.documentElement.clientWidth;
@@ -380,6 +382,27 @@ function renderizarProductosSeleccionados() {
   });
 }
 
+function mostrarNotificacionVenta(detalle) {
+  const notificacion = document.getElementById('notificacion-venta');
+  const textoDetalle = document.getElementById('detalle-notificacion-venta');
+  if (!notificacion || !textoDetalle) return;
+
+  clearTimeout(temporizadorNotificacionVenta);
+  clearTimeout(temporizadorOcultarNotificacionVenta);
+  textoDetalle.textContent = detalle;
+  notificacion.hidden = false;
+  notificacion.classList.remove('is-visible');
+  void notificacion.offsetWidth;
+  notificacion.classList.add('is-visible');
+
+  temporizadorNotificacionVenta = setTimeout(() => {
+    notificacion.classList.remove('is-visible');
+    temporizadorOcultarNotificacionVenta = setTimeout(() => {
+      notificacion.hidden = true;
+    }, 200);
+  }, 3500);
+}
+
 async function registrarVenta(evento) {
   evento.preventDefault();
 
@@ -406,13 +429,15 @@ async function registrarVenta(evento) {
   }
 
   renderizarProductosSeleccionados();
-  const avisoUbicacion = !ubicacion && registradas > 0
-    ? ' No se pudo obtener el GPS, así que estas ventas no aparecerán en el mapa de calor.'
-    : '';
-  if (registradas === selecciones.length) {
-    alert(`Se registraron ${registradas} producto(s) correctamente.${avisoUbicacion}`);
-  } else {
-    alert(`Se registraron ${registradas} de ${selecciones.length} productos. Los pendientes siguen seleccionados para reintentar.${avisoUbicacion}`);
+  if (registradas > 0) {
+    const detalles = [];
+    if (registradas < selecciones.length) {
+      detalles.push(`Se registraron ${registradas} de ${selecciones.length} productos; los pendientes siguen seleccionados para reintentar.`);
+    }
+    if (!ubicacion) {
+      detalles.push('No se pudo obtener el GPS, así que estas ventas no aparecerán en el mapa de calor.');
+    }
+    mostrarNotificacionVenta(detalles.join(' '));
   }
   if (registradas > 0) cargarDatosVentas();
 }
