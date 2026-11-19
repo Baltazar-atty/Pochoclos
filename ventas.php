@@ -49,18 +49,87 @@ if ($metodo === 'POST') {
         exit;
     }
 
+    $con->begin_transaction();
+    $stmtStock = $con->prepare("UPDATE productos SET stock = stock - ? WHERE id = ? AND stock >= ?");
+    if (!$stmtStock) {
+        $con->rollback();
+        error_log('Error al preparar descuento de stock: ' . $con->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'No se pudo registrar la venta.']);
+        exit;
+    }
+    $stmtStock->bind_param("iii", $cantidad, $producto_id, $cantidad);
+    if (!$stmtStock->execute()) {
+        $con->rollback();
+        error_log('Error al descontar stock: ' . $stmtStock->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'No se pudo registrar la venta.']);
+        exit;
+    }
+    $stockActualizado = $stmtStock->affected_rows === 1;
+    $stmtStock->close();
+
+    if (!$stockActualizado) {
+        $con->rollback();
+        $consultaStock = $con->prepare("SELECT stock FROM productos WHERE id = ?");
+        if (!$consultaStock) {
+            error_log('Error al consultar stock disponible: ' . $con->error);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'No se pudo verificar el stock.']);
+            exit;
+        }
+        $consultaStock->bind_param("i", $producto_id);
+        if (!$consultaStock->execute()) {
+            error_log('Error al consultar stock disponible: ' . $consultaStock->error);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'No se pudo verificar el stock.']);
+            exit;
+        }
+        $resultadoStock = $consultaStock->get_result()->fetch_assoc();
+        $consultaStock->close();
+
+        if (!$resultadoStock) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'message' => 'El producto no existe.']);
+        } else {
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Stock insuficiente. Disponibles: ' . (int)$resultadoStock['stock'] . '.'
+            ]);
+        }
+        exit;
+    }
+
     if ($latitud === null) {
         $stmt = $con->prepare("INSERT INTO ventas (carrito_id, producto_id, cantidad, latitud, longitud, fecha_venta) VALUES (?, ?, ?, NULL, NULL, NOW())");
+        if (!$stmt) {
+            $con->rollback();
+            error_log('Error al preparar venta: ' . $con->error);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'No se pudo registrar la venta.']);
+            exit;
+        }
         $stmt->bind_param("iii", $carrito_id, $producto_id, $cantidad);
     } else {
         $stmt = $con->prepare("INSERT INTO ventas (carrito_id, producto_id, cantidad, latitud, longitud, fecha_venta) VALUES (?, ?, ?, ?, ?, NOW())");
+        if (!$stmt) {
+            $con->rollback();
+            error_log('Error al preparar venta: ' . $con->error);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'No se pudo registrar la venta.']);
+            exit;
+        }
         $stmt->bind_param("iiidd", $carrito_id, $producto_id, $cantidad, $latitud, $longitud);
     }
 
-    if ($stmt->execute()) {
+    if ($stmt->execute() && $con->commit()) {
         echo json_encode(['success' => true, 'message' => '✅ Venta registrada con éxito.']);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Error al guardar venta: ' . $con->error]);
+        $con->rollback();
+        error_log('Error al guardar venta: ' . $stmt->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'No se pudo registrar la venta.']);
     }
     $stmt->close();
     exit;

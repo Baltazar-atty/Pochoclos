@@ -75,20 +75,49 @@ CREATE TABLE `productos` (
   `id` int(11) NOT NULL,
   `tipo` enum('bolsa','caja','maletin') NOT NULL,
   `subtipo` varchar(50) DEFAULT NULL,
-  `precio` decimal(10,2) NOT NULL
+  `precio` decimal(10,2) NOT NULL,
+  `stock` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `productos`
 --
 
-INSERT INTO `productos` (`id`, `tipo`, `subtipo`, `precio`) VALUES
-(1, 'bolsa', NULL, 1500.00),
-(2, 'caja', NULL, 2500.00),
-(3, 'maletin', 'Spiderman', 4000.00),
-(4, 'maletin', 'Cars', 4000.00),
-(5, 'maletin', 'Dragon Ball', 4000.00),
-(6, 'maletin', 'Barbie', 4000.00);
+INSERT INTO `productos` (`id`, `tipo`, `subtipo`, `precio`, `stock`) VALUES
+(1, 'bolsa', NULL, 1500.00, 0),
+(2, 'caja', NULL, 2500.00, 0),
+(3, 'maletin', 'Spiderman', 4000.00, 0),
+(4, 'maletin', 'Cars', 4000.00, 0),
+(5, 'maletin', 'Dragon Ball', 4000.00, 0),
+(6, 'maletin', 'Barbie', 4000.00, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `insumos`
+--
+
+CREATE TABLE `insumos` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) NOT NULL,
+  `unidad` varchar(30) NOT NULL,
+  `imagen` varchar(255) NOT NULL,
+  `stock` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Datos de prueba para la tabla `insumos`
+--
+
+INSERT INTO `insumos` (`id`, `nombre`, `unidad`, `imagen`, `stock`) VALUES
+(1, 'Azúcar', 'kg', 'imagenes/azucar_ledesma.png', 25),
+(2, 'Maíz', 'kg', 'imagenes/bolsa_maiz.png', 50),
+(3, 'Aceite', 'litros', 'imagenes/aceite_natura.png', 20),
+(4, 'Coco', 'unidades', 'imagenes/Coco.png.png', 10);
+
+ALTER TABLE `insumos`
+  AUTO_INCREMENT=5;
 
 -- --------------------------------------------------------
 
